@@ -1,0 +1,393 @@
+import { DataTypeValidator } from ".";
+import { FieldValueArray } from "./arrays/fieldValueArray";
+import { FieldValue, FieldValueVersion } from "./fieldValue"
+import { Model } from "./model";
+import { FormatError } from "./utils/errors";
+
+export const enum RecordState {
+    UNMODIFIED = 0,
+    ADDED = 1,
+    MODIFIED = 2,
+    DELETED = 3,
+    DETACHED = 4
+}
+
+const enum RecordOrigin {
+    NEW = 0,
+    LOADED = 1,
+    COPIED = 2
+}
+
+export class Record {
+    static STATE_KEY = "state";
+    static ORIGINAL_VALUES_KEY = "original";
+    static CURRENT_VALUES_KEY = "current";
+    static VALUES_KEY = "values";
+
+    private _model : Model;
+    private _state = RecordState.DETACHED;
+    private _fieldValues : FieldValueArray;
+    private _properties = new Map();
+    private _origin : RecordOrigin;
+
+    protected constructor(model : Model) {
+        this._model = model;
+        this._fieldValues = new FieldValueArray();
+    }
+
+    get model() {
+        return this._model;
+    }
+
+    get state() {
+        return this._state;
+    }
+
+    get properties() {
+        return this._properties;
+    }
+
+    static new(model : Model, ...values : any[]) {
+        let record = new Record(model);
+        record.initFieldValues();
+        record.loadData(...values);
+        record._origin = RecordOrigin.NEW;
+        return record;
+    }
+
+    static loadData(model : Model, ...values : any[]) {
+        let record = new Record(model);
+        record.loadFirstData(...values);
+        record._origin = RecordOrigin.LOADED;
+        return record;
+    }
+
+    static copy(model : Model, record : Record) {
+        let copiedRecord = new Record(model);
+        copiedRecord._state = record.state;
+        copiedRecord._origin = RecordOrigin.COPIED;
+        copiedRecord._properties = new Map(record._properties);
+
+        for (let field of model.fields) {
+            let fieldValue = record._fieldValues.findByFieldName(field.fieldName);
+
+            let copiedFieldValue = FieldValue.copy(field, fieldValue);
+            copiedRecord._fieldValues.push(copiedFieldValue);
+        }
+
+        return copiedRecord;
+    }
+
+    static deserialize(model : Model, obj : any) {
+        let recordState = FormatError.getValueOrThrow<RecordState>(obj, Record.STATE_KEY);
+
+        let originalProperty = FormatError.getValueOrThrow<any>(obj, Record.ORIGINAL_VALUES_KEY);
+
+        let originalValues = Record.getCorrectValuesOrderList(model, originalProperty);
+        let record : Record;
+
+        switch (recordState as RecordState) {
+            case RecordState.ADDED:
+                record = Record.new(model, ...originalValues);
+                break;
+            case RecordState.UNMODIFIED:
+                record = Record.loadData(model, ...originalValues);
+                break;
+            case RecordState.MODIFIED:
+                record = Record.loadData(model, ...originalValues);
+                let currentProperty = FormatError.getValueOrThrow<any>(obj, Record.CURRENT_VALUES_KEY);
+
+                let currentValues = Record.getCorrectValuesOrderList(model, currentProperty);
+                record.loadData(...currentValues);
+                break;
+            case RecordState.DELETED:
+                record = Record.loadData(model);
+                record.delete();
+                break;
+            default:
+                record = Record.new(model);
+                break;
+        }
+
+        return record;
+    }
+
+    static getCorrectValuesOrderList(model : Model, obj : any) : any[] {
+        if (DataTypeValidator.DataTypeValidator.isString(obj)) obj = JSON.parse(obj);
+
+        let values : any[] = [];
+        let objPropertiesCount = 0;
+        let objPropertiesLength = Object.keys(obj).length - 1;
+
+        for (var field of model.fields) {
+            let value = obj[field.fieldName];
+
+            if (value != null) {
+                values.push(value);
+
+                if (objPropertiesCount == objPropertiesLength) break;
+            }
+            else {
+                values.push(field.defaultValue);
+            }
+        }
+        
+        return values;
+    }
+
+    getValue(fieldName : string, version : FieldValueVersion = FieldValueVersion.CURRENT) {
+        if (this._state == RecordState.DELETED && version == FieldValueVersion.CURRENT) 
+            throw new Error("Cannot get CURRENT value on DELETED record.");
+
+        let fieldValue = this._fieldValues.findByFieldName(fieldName);
+        return fieldValue.getValue(version);
+    }
+
+    setValue(fieldName : string, value : any) {
+        if (this._state == RecordState.DELETED) throw new Error("Cannot set value on DELETED record.");
+
+        let fieldValue = this._fieldValues.findByFieldName(fieldName);
+        fieldValue.value = value;
+
+        if (this._state != RecordState.DETACHED && fieldValue.hasChanged() && this._state != RecordState.ADDED) 
+            this._state = RecordState.MODIFIED;
+    }
+
+    private initFieldValues(startIndex = 0) {
+        for (var i = startIndex; i < this._model.fields.length; i++) {
+            let field = this._model.fields[i];
+            let fieldValue = FieldValue.new(field);
+            this._fieldValues.push(fieldValue);
+        }
+    }
+
+    private loadFirstData(...values : any[]) : void {
+        for (var i = 0; i < values.length; i++) {
+            let field = this._model.fields[i];
+            let value : any = values[i];
+
+            if (value == undefined) value = field.defaultValue;
+
+            let fieldValue = FieldValue.loadData(this._model.fields[i], values[i]);
+            this._fieldValues.push(fieldValue);
+        }
+
+        this.initFieldValues(values.length);
+    }
+
+    loadData(...values : any[]) {
+        for (var i = 0; i < values.length; i++) {
+            let value = values[i];
+            
+            if (value == undefined) continue;
+
+            this._fieldValues[i].value = values[i];
+        }
+    }
+
+    delete() : void {
+        switch (this._state) {
+            case RecordState.UNMODIFIED:
+            case RecordState.MODIFIED:
+                this._state = RecordState.DELETED;
+                break;
+            case RecordState.ADDED:
+                this.remove();
+                break;
+            case RecordState.DELETED:
+                throw new Error("Record is already DELETED.");
+            case RecordState.DETACHED:
+                throw new Error("Record is DETACHED. Cannot be deleted.");
+        }
+    }
+
+    private remove() : void {
+        this._state = RecordState.DETACHED;
+        this._model.records.remove(this);
+    }
+
+    hasChanges() : boolean {
+        return this._state != RecordState.UNMODIFIED;
+    }
+
+    private hasStrictChanges() : boolean {
+        for (var fieldValue of this._fieldValues) {
+            if (fieldValue.hasChanged()) return true;
+        }
+
+        return false;
+    }
+
+    acceptChanges() : void {
+        switch (this._state) {
+            case RecordState.DELETED:
+                this.remove();
+                break;
+            case RecordState.DETACHED:
+                throw new Error("Record is DETACHED. Cannot accept changes.");
+            case RecordState.ADDED:
+            case RecordState.MODIFIED:
+                this._fieldValues.forEach(fieldValue => fieldValue.acceptChange());
+                this._state = RecordState.UNMODIFIED;
+                break;
+        }
+    }
+
+    rejectChanges() : void {
+        switch (this._state) {
+            case RecordState.ADDED:
+                this.remove();
+                break;
+            case RecordState.MODIFIED:
+            case RecordState.DELETED:
+                this._fieldValues.forEach(fieldValue => fieldValue.rejectChange());
+                this._state = RecordState.UNMODIFIED;
+                break;
+            case RecordState.DETACHED:
+                throw new Error("Record is DETACHED. Cannot reject changes.");
+        }
+    }
+
+    private getChangesByNonStoredFields(includeNonStored : boolean) {
+        let obj : {[k: string]: any} = {};
+
+        switch(this._state) {
+            case RecordState.ADDED:
+                obj = this.serializeByVersion(includeNonStored);
+                break;
+            case RecordState.DELETED:
+            case RecordState.MODIFIED:
+                obj = this.serializeChanges(includeNonStored);
+                break;
+        }
+
+        return obj;
+    }
+
+    getChanges() {
+        return this.getChangesByNonStoredFields(true);
+    }
+
+    getChangesForSave() {
+        return this.getChangesByNonStoredFields(false);
+    }
+
+    getParentRecord(relationName : string) : Record | null {
+        let relation = this._model.parentRelations.findByRelationName(relationName);
+
+        if (relation == null) return null;
+
+        let parentFieldName = relation.parentField.fieldName;
+        let childFieldName = relation.childField.fieldName;
+
+        for (var record of relation.parentModel.records) {
+            if (record.getValue(parentFieldName) == this.getValue(childFieldName)) {
+                return record;
+            }
+        }
+
+        return null;
+    }
+
+    getChildRecords(relationName : string) : Record[] | null {
+        let relation = this._model.childRelations.findByRelationName(relationName);
+
+        if (relation == null) return null;
+
+        let parentFieldName = relation.parentField.fieldName;
+        let childFieldName = relation.childField.fieldName;
+
+        let results: Record[] = [];
+
+        for (var record of relation.childModel.records) {
+            if (record.getValue(childFieldName) == this.getValue(parentFieldName)) {
+                results.push(record);
+            }
+        }
+
+        return results;
+    }
+
+    addProperty(key : string, value : any) : void {
+        this._properties.set(key, value);
+    }
+
+    containsProperty(key : string) : boolean {
+        return this._properties.has(key);
+    }
+
+    removeProperty(key : string) : boolean {
+        return this._properties.delete(key);
+    }
+
+    getProperty(key : string) : any {
+        return this._properties.get(key);
+    }
+    
+    private serializeByVersion(includeNonStored : boolean, version = FieldValueVersion.CURRENT) {
+        let obj: {[k: string]: any} = {};
+
+        if (this._state == RecordState.DELETED && version == FieldValueVersion.CURRENT) return obj;
+
+        for (var fieldValue of this._fieldValues) {
+            if (!includeNonStored && fieldValue.field.nonStored) continue;
+            obj[fieldValue.fieldName] = fieldValue.getValue(version);
+        }
+
+        return obj;
+    }
+
+    private serializeChanges(includeNonStored : boolean) {
+        let obj: {[k: string]: any} = {};
+
+        switch(this._state) {
+            case RecordState.DELETED:
+                for (var primaryKeyFieldName of this._model.getPrimaryKeys()) {
+                    obj[primaryKeyFieldName] = this.getValue(primaryKeyFieldName, FieldValueVersion.ORIGINAL);
+                }
+                return obj;
+            case RecordState.UNMODIFIED:
+                return obj;
+        }
+
+        for (var fieldValue of this._fieldValues) {
+            if (!fieldValue.field.primaryKey && !fieldValue.hasChanged()) continue;
+            if (!includeNonStored && fieldValue.field.nonStored) continue;
+
+            obj[fieldValue.fieldName] = fieldValue.getValue(FieldValueVersion.CURRENT);
+        }
+
+        return obj;
+    }
+
+    serialize() {
+        let obj: {[k: string]: any} = {};
+
+        obj[Record.STATE_KEY] = this._state;
+        obj[Record.ORIGINAL_VALUES_KEY] = this.serializeByVersion(true, FieldValueVersion.ORIGINAL);
+        obj[Record.CURRENT_VALUES_KEY] = this.serializeByVersion(true, FieldValueVersion.CURRENT);
+
+        return obj;
+    }
+
+    /**
+     * @internal
+     */
+    setStateOnPush() {
+        switch (this._origin) {
+            case RecordOrigin.NEW:
+                this._state = RecordState.ADDED;
+                break;
+            case RecordOrigin.LOADED:
+                if (this.hasStrictChanges()) this._state = RecordState.MODIFIED;
+                else this._state = RecordState.UNMODIFIED;
+                break;
+            case RecordOrigin.COPIED:
+                break;
+            default:
+                throw new Error("ORIGIN ENUM ERROR");
+        }        
+    }
+}
+
+module.exports = {Record};
