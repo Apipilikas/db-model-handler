@@ -30,6 +30,10 @@ export class Record {
     private _properties = new Map();
     private _origin : RecordOrigin;
 
+    /**
+     * @constructor Record contructor
+     * @param model The model
+     */
     protected constructor(model : Model) {
         this._model = model;
         this._fieldValues = new FieldValueArray();
@@ -47,6 +51,13 @@ export class Record {
         return this._properties;
     }
 
+    /**
+     * Creates a new Record instance.
+     * @param model The model
+     * @param values Param array of values. Values order should correspond to the fields order. 
+     * Undefined can be used to skip value.
+     * @returns 
+     */
     static new(model : Model, ...values : any[]) {
         let record = new Record(model);
         record.initFieldValues();
@@ -55,6 +66,13 @@ export class Record {
         return record;
     }
 
+    /**
+     * Creates a Record instance and loads values into record.
+     * @param model The model
+     * @param values Param array of values. Values order should correspond to the fields order.
+     * Undefined can be used to skip value.
+     * @returns 
+     */
     static loadData(model : Model, ...values : any[]) {
         let record = new Record(model);
         record.loadFirstData(...values);
@@ -62,6 +80,12 @@ export class Record {
         return record;
     }
 
+    /**
+     * Copies a Record into a new one preserving its behavior.
+     * @param model The model
+     * @param record The record to be copied
+     * @returns The copied Record
+     */
     static copy(model : Model, record : Record) {
         let copiedRecord = new Record(model);
         copiedRecord._state = record.state;
@@ -78,11 +102,27 @@ export class Record {
         return copiedRecord;
     }
 
-    static deserialize(model : Model, obj : any) {
+    /**
+     * Deserializes the JSON object into Record.
+     * @param model The model
+     * @param obj The JSON format object. If the input is string then it will be JSON parsed.
+     * @example
+     * {
+     *   "state": 0,
+     *   "original": {
+     *     "field1Name": "value1",
+     *     "field2Name": 2
+     *   },
+     *   "current": {
+     *     "field1Name": "value1_modified",
+     *     "field2Name": 3
+     *   }
+     * }
+     */
+    static deserialize(model : Model, obj : any) : Record {
         let recordState = FormatError.getValueOrThrow<RecordState>(obj, Record.STATE_KEY);
-
         let originalProperty = FormatError.getValueOrThrow<any>(obj, Record.ORIGINAL_VALUES_KEY);
-
+        
         let originalValues = Record.getCorrectValuesOrderList(model, originalProperty);
         let record : Record;
 
@@ -112,6 +152,14 @@ export class Record {
         return record;
     }
 
+    /**
+     * Gets values list in correct order based on fields.
+     * @param model The model
+     * @param obj The JSON format object. If the input is string then it will be JSON parsed.
+     * The object should have fields that belongs to model fields.
+     * @returns List of values in correct order that corresponds to fields order. For the fields that were not
+     * included in JSON object, default value is taken instead.
+     */
     static getCorrectValuesOrderList(model : Model, obj : any) : any[] {
         if (DataTypeValidator.DataTypeValidator.isString(obj)) obj = JSON.parse(obj);
 
@@ -135,7 +183,12 @@ export class Record {
         return values;
     }
 
-    getValue(fieldName : string, version : FieldValueVersion = FieldValueVersion.CURRENT) {
+    /**
+     * Gets field's value.
+     * @param fieldName The field name
+     * @param version The field value version
+     */
+    getValue(fieldName : string, version : FieldValueVersion = FieldValueVersion.CURRENT) : any {
         if (this._state == RecordState.DELETED && version == FieldValueVersion.CURRENT) 
             throw new Error("Cannot get CURRENT value on DELETED record.");
 
@@ -143,6 +196,11 @@ export class Record {
         return fieldValue.getValue(version);
     }
 
+    /**
+     * Sets field's value.
+     * @param fieldName The field name
+     * @param value The proposed value
+     */
     setValue(fieldName : string, value : any) {
         if (this._state == RecordState.DELETED) throw new Error("Cannot set value on DELETED record.");
 
@@ -168,23 +226,32 @@ export class Record {
 
             if (value == undefined) value = field.defaultValue;
 
-            let fieldValue = FieldValue.loadData(this._model.fields[i], values[i]);
+            let fieldValue = FieldValue.loadData(this._model.fields[i], value);
             this._fieldValues.push(fieldValue);
         }
 
         this.initFieldValues(values.length);
     }
 
+    /**
+     * Sets multiple values.
+     * @param values Param array of values. Values order should correspond to the fields order.
+     * Undefined can be used to skip value.
+     */
     loadData(...values : any[]) {
         for (var i = 0; i < values.length; i++) {
             let value = values[i];
             
             if (value == undefined) continue;
 
-            this._fieldValues[i].value = values[i];
+            this._fieldValues[i].value = value;
         }
     }
 
+    /**
+     * Deletes record.
+     * @throws Error in DELETED and DETACHED state
+     */
     delete() : void {
         switch (this._state) {
             case RecordState.UNMODIFIED:
@@ -206,6 +273,9 @@ export class Record {
         this._model.records.remove(this);
     }
 
+    /**
+     * Shows whether record has changes or not.
+     */
     hasChanges() : boolean {
         return this._state != RecordState.UNMODIFIED;
     }
@@ -218,6 +288,9 @@ export class Record {
         return false;
     }
 
+    /**
+     * Commits all changes.
+     */
     acceptChanges() : void {
         switch (this._state) {
             case RecordState.DELETED:
@@ -233,6 +306,9 @@ export class Record {
         }
     }
 
+    /**
+     * Rolls back all changes.
+     */
     rejectChanges() : void {
         switch (this._state) {
             case RecordState.ADDED:
@@ -264,14 +340,24 @@ export class Record {
         return obj;
     }
 
+    /**
+     * Gets all changes into JSON format.
+     */
     getChanges() {
         return this.getChangesByNonStoredFields(true);
     }
 
+    /**
+     * Gets all changes excluding non stored fields into JSON format.
+     */
     getChangesForSave() {
         return this.getChangesByNonStoredFields(false);
     }
 
+    /**
+     * Gets parent record based on given relation name.
+     * @param relationName The relation name of relation
+     */
     getParentRecord(relationName : string) : Record | null {
         let relation = this._model.parentRelations.findByRelationName(relationName);
 
@@ -289,6 +375,10 @@ export class Record {
         return null;
     }
 
+    /**
+     * Gets child records based on given relation name.
+     * @param relationName The relation name of relation
+     */
     getChildRecords(relationName : string) : Record[] | null {
         let relation = this._model.childRelations.findByRelationName(relationName);
 
@@ -308,18 +398,35 @@ export class Record {
         return results;
     }
 
+    /**
+     * Adds property to record.
+     * @param key The key
+     * @param value The value
+     */
     addProperty(key : string, value : any) : void {
         this._properties.set(key, value);
     }
 
+    /**
+     * Contains property.
+     * @param key The key
+     */
     containsProperty(key : string) : boolean {
         return this._properties.has(key);
     }
 
+    /**
+     * Remove property from record.
+     * @param key The key
+     */
     removeProperty(key : string) : boolean {
         return this._properties.delete(key);
     }
 
+    /**
+     * Gets property from given key.
+     * @param key The key
+     */
     getProperty(key : string) : any {
         return this._properties.get(key);
     }
@@ -360,6 +467,9 @@ export class Record {
         return obj;
     }
 
+    /**
+     * Serializes record values into JSON format.
+     */
     serialize() {
         let obj: {[k: string]: any} = {};
 
@@ -371,6 +481,7 @@ export class Record {
     }
 
     /**
+     * Only for INTERNAL use. Sets status when record is pushed to RecordArray.
      * @internal
      */
     setStateOnPush() {

@@ -21,7 +21,7 @@ class FieldArray extends baseArray_1.BaseArray {
     findByFieldName(fieldName) {
         let fld = this.find(field => field.fieldName == fieldName);
         if (fld == null)
-            throw new Error();
+            throw new errors_1.FieldNotFoundError(fieldName, this._model.modelName);
         return fld;
     }
 }

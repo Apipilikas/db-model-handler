@@ -11,10 +11,9 @@ export declare class FieldValue {
     private _originalValue;
     private _currentValue;
     /**
-     * FieldValue constructor
+     * @constructor FieldValue constructor
      * @param field Referenced field
      * @param value Value of the field
-     * @constructor
      */
     private constructor();
     /**
@@ -42,17 +41,20 @@ export declare class FieldValue {
     /**
      * Creates new FieldValue with default value as value. Used to store new data.
      * @param field Referenced field
-     * @returns FieldValue instance
      */
     static new(field: Field): FieldValue;
     /**
      * Creates new FieldValue with specified value as value.
      * Used to store existing data.
-     * @param field
-     * @param value
-     * @returns FieldValue instance
+     * @param field The referenced field
+     * @param value The value
      */
     static loadData(field: Field, value: any): FieldValue;
+    /**
+     * Copies a FieldValue into a new one preserving its behavior.
+     * @param field The referenced field
+     * @param fieldValue The field value to be copied
+     */
     static copy(field: Field, fieldValue: FieldValue): FieldValue;
     /**
      * Shows if value has changed. Change occurs when original value is different from the current one.

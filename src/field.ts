@@ -3,7 +3,7 @@ import { DataType, DataTypeValidator } from "./utils/dataTypeValidator"
 import { FormatError } from "./utils/errors";
 
 export class Field {
-    static NAME_KEY = "name";
+    static NAME_KEY = "fieldName";
     static DATATYPE_KEY = "dataType";
     static PRIMARYKEY_KEY = "primaryKey";
     static READONLY_KEY = "readOnly";
@@ -17,6 +17,13 @@ export class Field {
     private _defaultValue : any;
     private _model : Model;
 
+    /**
+     * @constructor Field constructor
+     * @param fieldName The field name
+     * @param dataType The data type
+     * @param readOnly The read only
+     * @param primaryKey The primary key
+     */
     constructor(fieldName : string, dataType : string | object | DataType, readOnly = false, primaryKey = false) {
         this._fieldName = fieldName;
         this._dataType = DataTypeValidator.getDataType(dataType);
@@ -57,7 +64,21 @@ export class Field {
         return this._model;
     }
 
-    static deserializeStructure(obj : any) {
+    /**
+     * Deserializes JSON format object into Field instance.
+     * @param obj The JSON structure format object. If the input is string then it will be parsed into JSON.
+     * @example
+     * {
+     *   "fieldName": "field1Name",
+     *   "dataType": "string",
+     *   "primaryKey": true,
+     *   "readOnly": true,
+     *   "nonStored": false
+     * }
+     */
+    static deserializeStructure(obj : any) : Field {
+        if (DataTypeValidator.isString(obj)) obj = JSON.parse(obj);
+
         let fieldName = FormatError.getValueOrThrow<string>(obj, Field.NAME_KEY);
         let dataType = FormatError.getValueOrThrow<DataType>(obj, Field.DATATYPE_KEY);
         let primaryKey = FormatError.getValueOrThrow<boolean>(obj, Field.PRIMARYKEY_KEY);
@@ -71,15 +92,17 @@ export class Field {
     }
 
     /**
-     * 
-     * @param model 
-     * @internal
+     * Sets model. Only for INTERNAL use.
+     * @param model The model
      */
     setModel(model : Model) {
         this._model = model;
     }
 
-    serializeStructure() {
+    /**
+     * Serializes Field structure into JSON format.
+     */
+    serializeStructure() : any {
         let obj: {[k: string]: any} = {};
 
         obj[Field.NAME_KEY] = this._fieldName;
@@ -91,7 +114,10 @@ export class Field {
         return obj;
     }
 
-    stringify() {
+    /**
+     * Gets serialized Field.
+     */
+    stringify() : string {
         return JSON.stringify(this.serializeStructure());
     }
 }

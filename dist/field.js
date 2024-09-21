@@ -4,6 +4,13 @@ exports.Field = void 0;
 const dataTypeValidator_1 = require("./utils/dataTypeValidator");
 const errors_1 = require("./utils/errors");
 class Field {
+    /**
+     * @constructor Field constructor
+     * @param fieldName The field name
+     * @param dataType The data type
+     * @param readOnly The read only
+     * @param primaryKey The primary key
+     */
     constructor(fieldName, dataType, readOnly = false, primaryKey = false) {
         this._readOnly = false;
         this._nonStored = false;
@@ -37,7 +44,21 @@ class Field {
     get model() {
         return this._model;
     }
+    /**
+     * Deserializes JSON format object into Field instance.
+     * @param obj The JSON structure format object. If the input is string then it will be parsed into JSON.
+     * @example
+     * {
+     *   "fieldName": "field1Name",
+     *   "dataType": "string",
+     *   "primaryKey": true,
+     *   "readOnly": true,
+     *   "nonStored": false
+     * }
+     */
     static deserializeStructure(obj) {
+        if (dataTypeValidator_1.DataTypeValidator.isString(obj))
+            obj = JSON.parse(obj);
         let fieldName = errors_1.FormatError.getValueOrThrow(obj, Field.NAME_KEY);
         let dataType = errors_1.FormatError.getValueOrThrow(obj, Field.DATATYPE_KEY);
         let primaryKey = errors_1.FormatError.getValueOrThrow(obj, Field.PRIMARYKEY_KEY);
@@ -48,13 +69,15 @@ class Field {
         return field;
     }
     /**
-     *
-     * @param model
-     * @internal
+     * Sets model. Only for INTERNAL use.
+     * @param model The model
      */
     setModel(model) {
         this._model = model;
     }
+    /**
+     * Serializes Field structure into JSON format.
+     */
     serializeStructure() {
         let obj = {};
         obj[Field.NAME_KEY] = this._fieldName;
@@ -64,12 +87,15 @@ class Field {
         obj[Field.NONSTORED_KEY] = this._nonStored;
         return obj;
     }
+    /**
+     * Gets serialized Field.
+     */
     stringify() {
         return JSON.stringify(this.serializeStructure());
     }
 }
 exports.Field = Field;
-Field.NAME_KEY = "name";
+Field.NAME_KEY = "fieldName";
 Field.DATATYPE_KEY = "dataType";
 Field.PRIMARYKEY_KEY = "primaryKey";
 Field.READONLY_KEY = "readOnly";

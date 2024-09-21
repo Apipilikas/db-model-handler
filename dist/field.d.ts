@@ -13,6 +13,13 @@ export declare class Field {
     private _nonStored;
     private _defaultValue;
     private _model;
+    /**
+     * @constructor Field constructor
+     * @param fieldName The field name
+     * @param dataType The data type
+     * @param readOnly The read only
+     * @param primaryKey The primary key
+     */
     constructor(fieldName: string, dataType: string | object | DataType, readOnly?: boolean, primaryKey?: boolean);
     get fieldName(): string;
     get dataType(): DataType;
@@ -22,10 +29,31 @@ export declare class Field {
     get nonStored(): boolean;
     set nonStored(value: boolean);
     get model(): Model;
+    /**
+     * Deserializes JSON format object into Field instance.
+     * @param obj The JSON structure format object. If the input is string then it will be parsed into JSON.
+     * @example
+     * {
+     *   "fieldName": "field1Name",
+     *   "dataType": "string",
+     *   "primaryKey": true,
+     *   "readOnly": true,
+     *   "nonStored": false
+     * }
+     */
     static deserializeStructure(obj: any): Field;
-    serializeStructure(): {
-        [k: string]: any;
-    };
+    /**
+     * Sets model. Only for INTERNAL use.
+     * @param model The model
+     */
+    setModel(model: Model): void;
+    /**
+     * Serializes Field structure into JSON format.
+     */
+    serializeStructure(): any;
+    /**
+     * Gets serialized Field.
+     */
     stringify(): string;
 }
 //# sourceMappingURL=field.d.ts.map

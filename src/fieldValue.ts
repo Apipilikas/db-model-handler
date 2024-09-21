@@ -16,10 +16,9 @@ export class FieldValue {
     private _currentValue : any;
 
     /**
-     * FieldValue constructor
+     * @constructor FieldValue constructor
      * @param field Referenced field
      * @param value Value of the field
-     * @constructor
      */
     private constructor(field : Field, value : any) {
         this._field = field;
@@ -76,7 +75,6 @@ export class FieldValue {
     /**
      * Creates new FieldValue with default value as value. Used to store new data.
      * @param field Referenced field
-     * @returns FieldValue instance
      */
     static new(field : Field) {
         return new FieldValue(field, field.defaultValue);
@@ -85,15 +83,19 @@ export class FieldValue {
     /**
      * Creates new FieldValue with specified value as value.
      * Used to store existing data.
-     * @param field 
-     * @param value 
-     * @returns FieldValue instance
+     * @param field The referenced field
+     * @param value The value
      */
-    static loadData(field : Field, value : any) {
+    static loadData(field : Field, value : any) : FieldValue {
         return new FieldValue(field, value);
     }
 
-    static copy(field : Field, fieldValue : FieldValue) {
+    /**
+     * Copies a FieldValue into a new one preserving its behavior. 
+     * @param field The referenced field
+     * @param fieldValue The field value to be copied
+     */
+    static copy(field : Field, fieldValue : FieldValue) : FieldValue {
         let copiedFieldValue = new FieldValue(field, fieldValue._originalValue);
         copiedFieldValue._currentValue = fieldValue._currentValue;
         return copiedFieldValue;

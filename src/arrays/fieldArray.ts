@@ -1,6 +1,6 @@
 import { Field } from "../field";
 import { Model } from "../model";
-import { AlreadyInitializedModelError } from "../utils/errors";
+import { AlreadyInitializedModelError, FieldNotFoundError } from "../utils/errors";
 import { BaseArray } from "./baseArray";
 
 export class FieldArray extends BaseArray<Field> {
@@ -26,7 +26,7 @@ export class FieldArray extends BaseArray<Field> {
     findByFieldName(fieldName : string) {
         let fld = this.find(field => field.fieldName == fieldName);
 
-        if (fld == null) throw new Error();
+        if (fld == null) throw new FieldNotFoundError(fieldName, this._model.modelName);
 
         return fld;
     }

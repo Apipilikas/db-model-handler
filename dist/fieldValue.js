@@ -11,10 +11,9 @@ var FieldValueVersion;
 })(FieldValueVersion || (exports.FieldValueVersion = FieldValueVersion = {}));
 class FieldValue {
     /**
-     * FieldValue constructor
+     * @constructor FieldValue constructor
      * @param field Referenced field
      * @param value Value of the field
-     * @constructor
      */
     constructor(field, value) {
         this._field = field;
@@ -66,7 +65,6 @@ class FieldValue {
     /**
      * Creates new FieldValue with default value as value. Used to store new data.
      * @param field Referenced field
-     * @returns FieldValue instance
      */
     static new(field) {
         return new FieldValue(field, field.defaultValue);
@@ -74,13 +72,17 @@ class FieldValue {
     /**
      * Creates new FieldValue with specified value as value.
      * Used to store existing data.
-     * @param field
-     * @param value
-     * @returns FieldValue instance
+     * @param field The referenced field
+     * @param value The value
      */
     static loadData(field, value) {
         return new FieldValue(field, value);
     }
+    /**
+     * Copies a FieldValue into a new one preserving its behavior.
+     * @param field The referenced field
+     * @param fieldValue The field value to be copied
+     */
     static copy(field, fieldValue) {
         let copiedFieldValue = new FieldValue(field, fieldValue._originalValue);
         copiedFieldValue._currentValue = fieldValue._currentValue;

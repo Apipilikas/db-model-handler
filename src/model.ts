@@ -6,13 +6,13 @@ import { FieldValueVersion } from "./fieldValue";
 import { FilterSelector } from "./filterEvaluator/filterSelector";
 import { Record, RecordState } from "./record";
 import { Schema } from "./schema";
-import { DataType } from "./utils/dataTypeValidator";
+import { DataType, DataTypeValidator } from "./utils/dataTypeValidator";
 import { MergeModelError, NotInitializedModelError, FormatError } from "./utils/errors";
 
-
 export class Model {
-    static NAME_KEY = "name";
+    static NAME_KEY = "modelName";
     static FIELDS_KEY = "fields";
+    static RECORDS_KEY = "records";
 
     private _modelName : string
     private _fields : FieldArray;
@@ -22,6 +22,10 @@ export class Model {
     private _childRelations : RelationModelArray;
     private _isInitialized : boolean = true;
 
+    /**
+     * @constructor Model constructor
+     * @param modelName The model name
+     */
     constructor(modelName : string) {
         this._modelName = modelName;
         this._fields = new FieldArray(this);
@@ -65,7 +69,26 @@ export class Model {
         return this._isInitialized;
     }
 
+    /**
+     * Deserializes JSON format object into Model instance.
+     * @param obj The JSON format object. If the input is string then it will be JSON parsed.
+     * @example
+     * {
+     *   "modelName": "modelName",
+     *   "fields": [
+     *     {
+     *       "fieldName": "field1Name",
+     *       "dataType": "string",
+     *       "primaryKey": true,
+     *       "readOnly": true,
+     *       "nonStored": false
+     *     }
+     *   ]
+     * }
+     */
     static deserializeStructure(obj : any) {
+        if (DataTypeValidator.isString(obj)) obj = JSON.parse(obj);
+
         let modelName = FormatError.getValueOrThrow<string>(obj, Model.NAME_KEY);
         let fields = FormatError.getValueOrThrow<any[]>(obj, Model.FIELDS_KEY);
 
@@ -82,34 +105,52 @@ export class Model {
         return model;
     }
 
+    /**
+     * Initializes the model. Fields should be initialized here.
+     */
     initModel() {
         throw new NotInitializedModelError(this.modelName);
     }
 
+    /**
+     * Pushes new field into the FieldArray.
+     * @param name The field name
+     * @param dataType The data type
+     * @param readOnly Declares whether field is readonly or not.
+     * @param primaryKey Declares whether field is primary key or not.
+     * @returns The pushed field
+     */
     pushNewField(name : string, dataType : string | any | DataType, readOnly : boolean, primaryKey : boolean) : Field {
         let field = new Field(name, dataType, readOnly, primaryKey);
         this._fields.push(field);
         return field;
     }
 
+    /**
+     * Pushes new record into the RecordArray.
+     * @param values Param array of values. Values order should correspond to the fields order.
+     * Undefined can be used to skip value.
+     */
     pushNewRecord(...values : any[]) : Record {
         let record = Record.new(this, ...values);
         this._records.push(record);
         return record;
     }
 
+    /**
+     * Loads data into record.
+     * @param values Param array of values. Values order should correspond to the fields order.
+     * Undefined can be used to skip value.
+     */
     loadRecord(...values : any[]) : Record {
         let record = Record.loadData(this, ...values);
         this._records.push(record);
         return record;
     }
 
-    loadRecords(data : any[]) : void {
-        for (var obj of data) {
-            this.loadRecord(...Object.values(obj));
-        }
-    }
-
+    /**
+     * Shows whether records have changes or not.
+     */
     hasChanges() : boolean {
         for (var record of this._records) {
             if (record.hasChanges()) return true;
@@ -118,10 +159,16 @@ export class Model {
         return false;
     }
 
+    /**
+     * Commits changes to all records.
+     */
     acceptChanges() : void {
         this._records.forEach(record => record.acceptChanges());
     }
 
+    /**
+     * Rolls back changes in every record.
+     */
     rejectChanges() : void {
         this._records.forEach(record => record.rejectChanges());
     }
@@ -141,14 +188,24 @@ export class Model {
         return array;
     }
 
+    /**
+     * Gets changes of each record into JSON format.
+     */
     getChanges() {
         return this.getChangesBySave(false);
     }
 
+    /**
+     * Gets changes of each record excluding non stored fields into JSON format.
+     */
     getChangesForSave() {
         return this.getChangesBySave(true);
     }
 
+    /**
+     * Merges model into this one.
+     * @param model The model to be merged
+     */
     merge(model : Model) {
         for (let field of this._fields) {
             try {
@@ -159,27 +216,60 @@ export class Model {
             }
         }
         
-        for (let record of model.records) {
+        for (let record of model._records) {
             let copiedRecord = Record.copy(this, record);
             this._records.push(copiedRecord);
         }
     }
 
+    /**
+     * Serializes every record of the model into JSON format.
+     */
     serialize() {
-        let array : any[] = [];
-        this._records.forEach(record => array.push(record.serialize()));
-        return array;
+        let obj : {[k: string]: any} = {};
+        let recordsArray : any[] = [];
+        
+        obj[Model.NAME_KEY] = this._modelName;
+        this._records.forEach(record => recordsArray.push(record.serialize()));
+        obj[Model.RECORDS_KEY] = recordsArray;
+
+        return obj;
     }
 
-    deserialize(jsonString : string) {
-        let parsedJson : any[] = JSON.parse(jsonString);
+    /**
+     * Deserializes the JSON object into model records.
+     * @param obj The JSON format object. If the input is string then it will be JSON parsed.
+     * @example
+     * {
+     *   "records": [
+     *     {
+     *       "state": 0,
+     *       "original": {
+     *         "field1Name": "value1",
+     *         "field2Name": 2
+     *       },
+     *       "current": {
+     *         "field1Name": "value1_modified",
+     *         "field2Name": 3
+     *       }
+     *     }
+     *   ]
+     * }
+     */
+    deserialize(obj : any) {
+        if (DataTypeValidator.isString(obj)) obj = JSON.parse(obj);
 
-        for (let obj of parsedJson) {
-            let record = Record.deserialize(this, obj);
+        let records = FormatError.getValueOrThrow<any[]>(obj, Model.RECORDS_KEY);
+
+        for (let object of records) {
+            let record = Record.deserialize(this, object);
             this._records.push(record);
         }
     }
 
+    /**
+     * Serializes Model structure into JSON format.
+     */
     serializeStructure() {
         let obj: {[k: string]: any} = {};
         let fieldsArray : any[] = [];
@@ -192,10 +282,17 @@ export class Model {
         return obj;
     }
 
-    select(filter : string) {
+    /**
+     * Gets record based on the given filter.
+     * @param filter The filter expression
+     */
+    select(filter : string) : Record[] {
         return FilterSelector.getSelectedRecords(filter, this);
     }
 
+    /**
+     * Gets primary key field names.
+     */
     getPrimaryKeys() {
         let array : string[] = [];
         this._fields.forEach(field => {
@@ -207,8 +304,8 @@ export class Model {
     }
 
     /**
-     * 
-     * @param schema 
+     * Sets schema. Only for INTERNAL use.
+     * @param schema The schema
      * @internal
      */
     setSchema(schema : Schema) {
