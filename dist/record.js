@@ -205,15 +205,23 @@ class Record {
         switch (this._state) {
             case 0 /* RecordState.UNMODIFIED */:
             case 2 /* RecordState.MODIFIED */:
+                this.deleteCascadeChildRecords();
                 this._state = 3 /* RecordState.DELETED */;
                 break;
             case 1 /* RecordState.ADDED */:
+                this.deleteCascadeChildRecords();
                 this.remove();
                 break;
             case 3 /* RecordState.DELETED */:
                 throw new Error("Record is already DELETED.");
             case 4 /* RecordState.DETACHED */:
                 throw new Error("Record is DETACHED. Cannot be deleted.");
+        }
+    }
+    deleteCascadeChildRecords() {
+        for (let relation of this._model.childRelations) {
+            let childRecords = this.getChildRecords(relation.relationName);
+            childRecords === null || childRecords === void 0 ? void 0 : childRecords.forEach(record => record.delete());
         }
     }
     remove() {

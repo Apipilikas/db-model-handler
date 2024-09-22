@@ -256,15 +256,24 @@ export class Record {
         switch (this._state) {
             case RecordState.UNMODIFIED:
             case RecordState.MODIFIED:
+                this.deleteCascadeChildRecords();
                 this._state = RecordState.DELETED;
                 break;
             case RecordState.ADDED:
+                this.deleteCascadeChildRecords();
                 this.remove();
                 break;
             case RecordState.DELETED:
                 throw new Error("Record is already DELETED.");
             case RecordState.DETACHED:
                 throw new Error("Record is DETACHED. Cannot be deleted.");
+        }
+    }
+
+    private deleteCascadeChildRecords() {
+        for (let relation of this._model.childRelations) {
+            let childRecords = this.getChildRecords(relation.relationName);
+            childRecords?.forEach(record => record.delete());
         }
     }
 

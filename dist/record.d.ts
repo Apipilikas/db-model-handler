@@ -100,6 +100,7 @@ export declare class Record {
      * @throws Error in DELETED and DETACHED state
      */
     delete(): void;
+    private deleteCascadeChildRecords;
     private remove;
     /**
      * Shows whether record has changes or not.
