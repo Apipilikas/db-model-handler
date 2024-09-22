@@ -121,24 +121,24 @@ export class Record {
      */
     static deserialize(model : Model, obj : any) : Record {
         let recordState = FormatError.getValueOrThrow<RecordState>(obj, Record.STATE_KEY);
-        let originalProperty = FormatError.getValueOrThrow<any>(obj, Record.ORIGINAL_VALUES_KEY);
+        let currentProperty = FormatError.getValueOrThrow<any>(obj, Record.CURRENT_VALUES_KEY);
         
-        let originalValues = Record.getCorrectValuesOrderList(model, originalProperty);
+        let currentValues = Record.getCorrectValuesOrderList(model, currentProperty);
         let record : Record;
 
         switch (recordState as RecordState) {
             case RecordState.ADDED:
-                record = Record.new(model, ...originalValues);
+                record = Record.new(model, ...currentValues);
                 break;
             case RecordState.UNMODIFIED:
-                record = Record.loadData(model, ...originalValues);
+                record = Record.loadData(model, ...currentValues);
                 break;
             case RecordState.MODIFIED:
+                let originalProperty = FormatError.getValueOrThrow<any>(obj, Record.CURRENT_VALUES_KEY);
+                let originalValues = Record.getCorrectValuesOrderList(model, originalProperty);
+                
                 record = Record.loadData(model, ...originalValues);
-                let currentProperty = FormatError.getValueOrThrow<any>(obj, Record.CURRENT_VALUES_KEY);
-
-                let currentValues = Record.getCorrectValuesOrderList(model, currentProperty);
-                record.loadData(...currentValues);
+                record.loadData(...currentProperty);
                 break;
             case RecordState.DELETED:
                 record = Record.loadData(model);
@@ -487,6 +487,14 @@ export class Record {
         obj[Record.CURRENT_VALUES_KEY] = this.serializeByVersion(true, FieldValueVersion.CURRENT);
 
         return obj;
+    }
+
+    /**
+     * Serializes current record values into JSON format. If record is DELETED, original values are returned instead.
+     */
+    serializeForDisplay() {
+        if (this._state == RecordState.DELETED) return this.serializeByVersion(true, FieldValueVersion.ORIGINAL);
+        return this.serializeByVersion(true, FieldValueVersion.CURRENT);
     }
 
     /**

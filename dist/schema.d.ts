@@ -88,9 +88,15 @@ export declare class Schema {
         [k: string]: any;
     };
     /**
-     * Serializes every model record.
+     * Serializes every record of every model into JSON format.
      */
     serialize(): {
+        [k: string]: any;
+    };
+    /**
+     * Serializes only the important information of every record of every model into JSON format.
+     */
+    serializeForDisplay(): {
         [k: string]: any;
     };
     /**
@@ -100,7 +106,6 @@ export declare class Schema {
     deserialize(obj: any): void;
     /**
      * Serializes Schema structure into JSON format.
-     * @returns
      */
     serializeStructure(): {
         [k: string]: any;

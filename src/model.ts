@@ -238,6 +238,15 @@ export class Model {
     }
 
     /**
+     * Serializes only the important information of every record of the model into JSON format.
+     */
+    serializeForDisplay() {
+        let recordsArray : any[] = [];
+        this._records.forEach(record => recordsArray.push(record.serializeForDisplay()));
+        return recordsArray;
+    }
+
+    /**
      * Deserializes the JSON object into model records.
      * @param obj The JSON format object. If the input is string then it will be JSON parsed.
      * @example

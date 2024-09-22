@@ -170,13 +170,25 @@ export class Schema {
     }
 
     /**
-     * Serializes every model record.
+     * Serializes every record of every model into JSON format.
      */
     serialize() {
         let obj : {[k: string]: any} = {};
 
         obj[Schema.NAME_KEY] = this._schemaName;
         this._models.forEach(model => obj[model.modelName] = model.serialize());
+
+        return obj;
+    }
+
+    /**
+     * Serializes only the important information of every record of every model into JSON format.
+     */
+    serializeForDisplay() {
+        let obj : {[k: string]: any} = {};
+        for (let model of this._models) {
+            obj[model.modelName] = model.serializeForDisplay();
+        }
 
         return obj;
     }
@@ -196,7 +208,6 @@ export class Schema {
 
     /**
      * Serializes Schema structure into JSON format.
-     * @returns 
      */
     serializeStructure() {
         let obj: {[k: string]: any} = {};

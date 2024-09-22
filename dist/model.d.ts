@@ -104,6 +104,10 @@ export declare class Model {
         [k: string]: any;
     };
     /**
+     * Serializes only the important information of every record of the model into JSON format.
+     */
+    serializeForDisplay(): any[];
+    /**
      * Deserializes the JSON object into model records.
      * @param obj The JSON format object. If the input is string then it will be JSON parsed.
      * @example

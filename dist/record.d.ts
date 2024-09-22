@@ -167,5 +167,11 @@ export declare class Record {
     serialize(): {
         [k: string]: any;
     };
+    /**
+     * Serializes current record values into JSON format. If record is DELETED, original values are returned instead.
+     */
+    serializeForDisplay(): {
+        [k: string]: any;
+    };
 }
 //# sourceMappingURL=record.d.ts.map
