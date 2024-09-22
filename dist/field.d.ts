@@ -43,11 +43,6 @@ export declare class Field {
      */
     static deserializeStructure(obj: any): Field;
     /**
-     * Sets model. Only for INTERNAL use.
-     * @param model The model
-     */
-    setModel(model: Model): void;
-    /**
      * Serializes Field structure into JSON format.
      */
     serializeStructure(): any;

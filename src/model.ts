@@ -21,6 +21,7 @@ export class Model {
     private _parentRelations : RelationModelArray;
     private _childRelations : RelationModelArray;
     private _isInitialized : boolean = true;
+    public strictMode : boolean = true;
 
     /**
      * @constructor Model constructor

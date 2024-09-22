@@ -16,6 +16,7 @@ class Model {
      */
     constructor(modelName) {
         this._isInitialized = true;
+        this.strictMode = true;
         this._modelName = modelName;
         this._fields = new fieldArray_1.FieldArray(this);
         this._records = new recordArray_1.RecordArray(this);

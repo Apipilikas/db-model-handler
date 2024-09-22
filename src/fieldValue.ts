@@ -67,7 +67,7 @@ export class FieldValue {
      */
     set value(value : any) {
         if (this._field.readOnly) throw new ReadOnlyFieldError(this._field.fieldName);
-        if (!this._dataTypeValidator.isValid(value)) throw new ValueValidationError(value, this._dataTypeValidator);
+        if (this._field.model.strictMode && !this._dataTypeValidator.isValid(value)) throw new ValueValidationError(value, this._dataTypeValidator);
 
         this._currentValue = this._dataTypeValidator.parseValue(value);
     }

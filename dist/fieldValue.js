@@ -58,7 +58,7 @@ class FieldValue {
     set value(value) {
         if (this._field.readOnly)
             throw new errors_1.ReadOnlyFieldError(this._field.fieldName);
-        if (!this._dataTypeValidator.isValid(value))
+        if (this._field.model.strictMode && !this._dataTypeValidator.isValid(value))
             throw new errors_1.ValueValidationError(value, this._dataTypeValidator);
         this._currentValue = this._dataTypeValidator.parseValue(value);
     }

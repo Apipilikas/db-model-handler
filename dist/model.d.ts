@@ -16,6 +16,7 @@ export declare class Model {
     private _parentRelations;
     private _childRelations;
     private _isInitialized;
+    strictMode: boolean;
     /**
      * @constructor Model constructor
      * @param modelName The model name

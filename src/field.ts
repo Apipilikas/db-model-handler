@@ -94,6 +94,7 @@ export class Field {
     /**
      * Sets model. Only for INTERNAL use.
      * @param model The model
+     * @internal
      */
     setModel(model : Model) {
         this._model = model;

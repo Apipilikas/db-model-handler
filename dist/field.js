@@ -71,6 +71,7 @@ class Field {
     /**
      * Sets model. Only for INTERNAL use.
      * @param model The model
+     * @internal
      */
     setModel(model) {
         this._model = model;
