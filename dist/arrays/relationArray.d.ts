@@ -6,6 +6,10 @@ export declare class BaseRelationArray extends BaseArray<Relation> {
     removeByRelationName(relationName: string): Relation;
     findIndexByRelationName(relationName: string): number;
     findByRelationName(relationName: string): Relation | undefined;
+    findByParentFieldName(fieldName: string): Relation[];
+    findByChildFieldName(fieldName: string): Relation[];
+    findCascadeUpdated(): Relation[];
+    findCascadeDeleted(): Relation[];
 }
 export declare class RelationArray extends BaseRelationArray {
     private _schema;

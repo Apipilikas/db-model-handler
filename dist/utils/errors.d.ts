@@ -1,4 +1,5 @@
 import { Record } from "../record";
+import { Relation } from "../relation";
 import { IDataTypeValidator } from "./dataTypeValidator";
 export declare class AlreadyInitializedModelError extends Error {
     constructor(modelName: string);
@@ -37,5 +38,8 @@ export declare class CastError<T> extends Error {
 }
 export declare class MergeModelError extends Error {
     constructor(mergedModelName: string, modelName: string, fieldName: string);
+}
+export declare class ForeignFieldConstraintError extends Error {
+    constructor(relation: Relation, value: any);
 }
 //# sourceMappingURL=errors.d.ts.map

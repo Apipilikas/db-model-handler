@@ -1,4 +1,5 @@
 import { Record } from "../record";
+import { Relation } from "../relation";
 import { IDataTypeValidator } from "./dataTypeValidator";
 
 export class AlreadyInitializedModelError extends Error {
@@ -84,5 +85,11 @@ export class CastError<T> extends Error {
 export class MergeModelError extends Error {
     constructor(mergedModelName : string, modelName : string, fieldName : string) {
         super(`Model [${modelName}] does not have the field [${fieldName}] that merging model [${mergedModelName}] appears to have.`);
+    }
+}
+
+export class ForeignFieldConstraintError extends Error {
+    constructor(relation : Relation, value : any) {
+        super(`Foreign field [${relation.childField.fieldName}] with value [${value}] isn't found on the parent model [${relation.parentModel.modelName}].`)
     }
 }

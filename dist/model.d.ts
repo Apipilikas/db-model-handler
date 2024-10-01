@@ -143,5 +143,6 @@ export declare class Model {
      * Gets primary key field names.
      */
     getPrimaryKeys(): string[];
+    containsFieldValue(fieldName: string, value: any): boolean;
 }
 //# sourceMappingURL=model.d.ts.map

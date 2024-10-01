@@ -60,7 +60,11 @@ class FieldValue {
             throw new errors_1.ReadOnlyFieldError(this._field.fieldName);
         if (this._field.model.strictMode && !this._dataTypeValidator.isValid(value))
             throw new errors_1.ValueValidationError(value, this._dataTypeValidator);
-        this._currentValue = this._dataTypeValidator.parseValue(value);
+        let parsedValue = this._dataTypeValidator.parseValue(value);
+        this.checkForeignKeyConstraint(parsedValue);
+        let previousValue = this._currentValue;
+        this._currentValue = parsedValue;
+        this.updateCascadeChildRelations(previousValue, parsedValue);
     }
     /**
      * Creates new FieldValue with default value as value. Used to store new data.
@@ -76,7 +80,9 @@ class FieldValue {
      * @param value The value
      */
     static loadData(field, value) {
-        return new FieldValue(field, value);
+        let fieldValue = new FieldValue(field, value);
+        fieldValue.checkForeignKeyConstraint(value); // Ensure data accuracy in loading
+        return fieldValue;
     }
     /**
      * Copies a FieldValue into a new one preserving its behavior.
@@ -108,6 +114,27 @@ class FieldValue {
     rejectChange() {
         if (this.hasChanged()) {
             this._currentValue = this._originalValue;
+        }
+    }
+    checkForeignKeyConstraint(value) {
+        var _a;
+        let relation = (_a = this.field.model.parentRelations.findByChildFieldName(this.fieldName)) === null || _a === void 0 ? void 0 : _a[0];
+        if (relation == null)
+            return;
+        let parentFieldName = relation.parentField.fieldName;
+        let valueExists = relation.parentModel.containsFieldValue(parentFieldName, value);
+        if (!valueExists) {
+            throw new errors_1.ForeignFieldConstraintError(relation, value);
+        }
+    }
+    updateCascadeChildRelations(currentValue, proposedValue) {
+        for (let relation of this.field.model.childRelations.findCascadeUpdated()) {
+            let childFieldName = relation.childField.fieldName;
+            let records = relation.childModel.select(`${childFieldName} = '${currentValue}'`);
+            // throw new Error(JSON.stringify(records[0].serialize()));
+            for (let record of records) {
+                record.setValue(childFieldName, proposedValue);
+            }
         }
     }
 }

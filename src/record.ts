@@ -271,7 +271,7 @@ export class Record {
     }
 
     private deleteCascadeChildRecords() {
-        for (let relation of this._model.childRelations) {
+        for (let relation of this._model.childRelations.findCascadeDeleted()) {
             let childRecords = this.getChildRecords(relation.relationName);
             childRecords?.forEach(record => record.delete());
         }

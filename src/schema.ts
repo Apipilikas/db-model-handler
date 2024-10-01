@@ -114,8 +114,8 @@ export class Schema {
      * @param parentField The parent field
      * @param childField The child field
      */
-    pushNewRelation(relationName : string, parentField : Field, childField : Field) {
-        let relation = new Relation(relationName, parentField, childField);
+    pushNewRelation(relationName : string, parentField : Field, childField : Field, cascadeUpdate : boolean = false, cascadeDelete : boolean = false) {
+        let relation = new Relation(relationName, parentField, childField, cascadeUpdate, cascadeDelete);
         this._relations.push(relation);
         return relation;
     }

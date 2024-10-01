@@ -8,10 +8,14 @@ export class Relation {
     static CHILD_MODEL_NAME_KEY = "childModelName";
     static PARENT_FIELD_NAME_KEY = "parentFieldName";
     static CHILD_FIELD_NAME_KEY = "childFieldName";
+    static CASCADE_UPDATE_KEY = "cascadeUpdate";
+    static CASCADE_DELETE_KEY = "cascadeDelete";
 
     private _relationName : string;
     private _parentField : Field;
     private _childField : Field;
+    private _cascadeUpdate : boolean = true;
+    private _cascadeDelete : boolean = true;
 
     /**
      * @constructor Relation contructor
@@ -19,10 +23,24 @@ export class Relation {
      * @param parentField The parent field
      * @param childField The referenced child field
      */
-    constructor(relationName : string, parentField : Field, childField : Field) {
+    constructor(relationName : string, parentField : Field, childField : Field);
+
+    /**
+     * @constructor Relation contructor
+     * @param relationName The relation name
+     * @param parentField The parent field
+     * @param childField The referenced child field
+     * @param cascadeUpdate Update all the child records
+     * @param cascadeDelete Delete all the child records
+     */
+    constructor(relationName : string, parentField : Field, childField : Field, cascadeUpdate : boolean, cascadeDelete : boolean);
+
+    constructor(relationName : string, parentField : Field, childField : Field, cascadeUpdate : boolean = false, cascadeDelete : boolean = false) {
         this._relationName = relationName;
         this._childField = childField;
         this._parentField = parentField;
+        this._cascadeUpdate = cascadeUpdate;
+        this._cascadeDelete = cascadeDelete;
     }
 
     get relationName() {
@@ -45,6 +63,22 @@ export class Relation {
         return this._childField.model;
     }
 
+    get cascadeUpdate() {
+        return this._cascadeUpdate;
+    }
+
+    set cascadeUpdate(value) {
+        this._cascadeUpdate = value;
+    }
+
+    get cascadeDelete() {
+        return this._cascadeDelete;
+    }
+
+    set cascadeDelete(value) {
+        this._cascadeDelete = value;
+    }
+
     /**
      * Deserializes JSON format object into Relation instance.
      * @param schema The schema
@@ -64,6 +98,8 @@ export class Relation {
         let parentFieldName = FormatError.getValueOrThrow<string>(obj, Relation.PARENT_FIELD_NAME_KEY);
         let childModelName = FormatError.getValueOrThrow<string>(obj, Relation.CHILD_MODEL_NAME_KEY);
         let childFieldName = FormatError.getValueOrThrow<string>(obj, Relation.CHILD_FIELD_NAME_KEY);
+        let cascadeUpdate = FormatError.getValueOrThrow<boolean>(obj, Relation.CASCADE_UPDATE_KEY);
+        let cascadeDelete = FormatError.getValueOrThrow<boolean>(obj, Relation.CASCADE_DELETE_KEY);
 
         let parentModel = schema.models.findByModelName(parentModelName);
         let childModel = schema.models.findByModelName(childModelName);
@@ -71,7 +107,7 @@ export class Relation {
         let parentField = parentModel.fields.findByFieldName(parentFieldName);
         let childField = childModel.fields.findByFieldName(childFieldName);
 
-        return new Relation(relationName, parentField, childField);
+        return new Relation(relationName, parentField, childField, cascadeUpdate, cascadeDelete);
     }
 
     /**
@@ -85,6 +121,8 @@ export class Relation {
         obj[Relation.PARENT_FIELD_NAME_KEY] = this._parentField.fieldName;
         obj[Relation.CHILD_MODEL_NAME_KEY] = this.childModel.modelName;
         obj[Relation.CHILD_FIELD_NAME_KEY] = this._childField.fieldName;
+        obj[Relation.CASCADE_UPDATE_KEY] = this._cascadeUpdate;
+        obj[Relation.CASCADE_DELETE_KEY] = this._cascadeDelete;
 
         return obj;
     }

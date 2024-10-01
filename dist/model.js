@@ -268,6 +268,13 @@ class Model {
     setSchema(schema) {
         this._schema = schema;
     }
+    containsFieldValue(fieldName, value) {
+        for (let record of this._records) {
+            if (record.getValue(fieldName) == value)
+                return true;
+        }
+        return false;
+    }
 }
 exports.Model = Model;
 Model.NAME_KEY = "modelName";

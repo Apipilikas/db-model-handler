@@ -60,7 +60,7 @@ export declare class Schema {
      * @param parentField The parent field
      * @param childField The child field
      */
-    pushNewRelation(relationName: string, parentField: Field, childField: Field): Relation;
+    pushNewRelation(relationName: string, parentField: Field, childField: Field, cascadeUpdate?: boolean, cascadeDelete?: boolean): Relation;
     /**
      * Shows whether models have changes or not.
      */

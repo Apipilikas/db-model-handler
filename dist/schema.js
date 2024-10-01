@@ -93,8 +93,8 @@ class Schema {
      * @param parentField The parent field
      * @param childField The child field
      */
-    pushNewRelation(relationName, parentField, childField) {
-        let relation = new relation_1.Relation(relationName, parentField, childField);
+    pushNewRelation(relationName, parentField, childField, cascadeUpdate = false, cascadeDelete = false) {
+        let relation = new relation_1.Relation(relationName, parentField, childField, cascadeUpdate, cascadeDelete);
         this._relations.push(relation);
         return relation;
     }

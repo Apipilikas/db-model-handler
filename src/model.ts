@@ -321,4 +321,12 @@ export class Model {
     setSchema(schema : Schema) {
         this._schema = schema;
     }
+
+    containsFieldValue(fieldName : string, value : any) {
+        for (let record of this._records) {
+            if (record.getValue(fieldName) == value) return true;
+        }
+
+        return false;
+    }
 }

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MergeModelError = exports.CastError = exports.FormatError = exports.ValueValidationError = exports.ReadOnlyFieldError = exports.DuplicateRecordError = exports.FieldNotFoundError = exports.ClosingCharNotFoundError = exports.NotInitializedSchemaError = exports.NotInitializedModelError = exports.AlreadyInitializedSchemaError = exports.AlreadyInitializedModelError = void 0;
+exports.ForeignFieldConstraintError = exports.MergeModelError = exports.CastError = exports.FormatError = exports.ValueValidationError = exports.ReadOnlyFieldError = exports.DuplicateRecordError = exports.FieldNotFoundError = exports.ClosingCharNotFoundError = exports.NotInitializedSchemaError = exports.NotInitializedModelError = exports.AlreadyInitializedSchemaError = exports.AlreadyInitializedModelError = void 0;
 class AlreadyInitializedModelError extends Error {
     constructor(modelName) {
         super(`Cannot change model [${modelName}] structure. Model has already been initialized.`);
@@ -84,3 +84,9 @@ class MergeModelError extends Error {
     }
 }
 exports.MergeModelError = MergeModelError;
+class ForeignFieldConstraintError extends Error {
+    constructor(relation, value) {
+        super(`Foreign field [${relation.childField.fieldName}] with value [${value}] isn't found on the parent model [${relation.parentModel.modelName}].`);
+    }
+}
+exports.ForeignFieldConstraintError = ForeignFieldConstraintError;

@@ -68,5 +68,7 @@ export declare class FieldValue {
      * Rejects change and rollback current value to the original one.
      */
     rejectChange(): void;
+    private checkForeignKeyConstraint;
+    private updateCascadeChildRelations;
 }
 //# sourceMappingURL=fieldValue.d.ts.map

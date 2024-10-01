@@ -11,8 +11,19 @@ class BaseRelationArray extends baseArray_1.BaseArray {
         return this.findIndex(relation => relation.relationName == relationName);
     }
     findByRelationName(relationName) {
-        let rel = this.find(relation => relation.relationName == relationName);
-        return rel;
+        return this.find(relation => relation.relationName == relationName);
+    }
+    findByParentFieldName(fieldName) {
+        return this.filter(relation => relation.parentField.fieldName == fieldName);
+    }
+    findByChildFieldName(fieldName) {
+        return this.filter(relation => relation.childField.fieldName == fieldName);
+    }
+    findCascadeUpdated() {
+        return this.filter(relation => relation.cascadeUpdate);
+    }
+    findCascadeDeleted() {
+        return this.filter(relation => relation.cascadeDelete);
     }
 }
 exports.BaseRelationArray = BaseRelationArray;

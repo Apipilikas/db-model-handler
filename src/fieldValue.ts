@@ -1,6 +1,6 @@
 import { Field } from "./field"
 import { DataTypeValidator, IDataTypeValidator } from "./utils/dataTypeValidator"
-import { ReadOnlyFieldError, ValueValidationError } from "./utils/errors";
+import { ForeignFieldConstraintError, ReadOnlyFieldError, ValueValidationError } from "./utils/errors";
 
 export enum FieldValueVersion {
     DEFAULT = 0,
@@ -69,7 +69,12 @@ export class FieldValue {
         if (this._field.readOnly) throw new ReadOnlyFieldError(this._field.fieldName);
         if (this._field.model.strictMode && !this._dataTypeValidator.isValid(value)) throw new ValueValidationError(value, this._dataTypeValidator);
 
-        this._currentValue = this._dataTypeValidator.parseValue(value);
+        let parsedValue = this._dataTypeValidator.parseValue(value);
+
+        this.checkForeignKeyConstraint(parsedValue);
+        let previousValue = this._currentValue;
+        this._currentValue = parsedValue;
+        this.updateCascadeChildRelations(previousValue, parsedValue);
     }
 
     /**
@@ -87,7 +92,9 @@ export class FieldValue {
      * @param value The value
      */
     static loadData(field : Field, value : any) : FieldValue {
-        return new FieldValue(field, value);
+        let fieldValue = new FieldValue(field, value); 
+        fieldValue.checkForeignKeyConstraint(value); // Ensure data accuracy in loading
+        return fieldValue;
     }
 
     /**
@@ -123,6 +130,29 @@ export class FieldValue {
     rejectChange() {
         if (this.hasChanged()) {
             this._currentValue = this._originalValue;
+        }
+    }
+
+    private checkForeignKeyConstraint(value : any) {
+        let relation = this.field.model.parentRelations.findByChildFieldName(this.fieldName)?.[0];
+        if (relation == null) return;
+
+        let parentFieldName = relation.parentField.fieldName;
+        let valueExists = relation.parentModel.containsFieldValue(parentFieldName, value);
+
+        if (!valueExists) {
+            throw new ForeignFieldConstraintError(relation, value);
+        }
+    }
+
+    private updateCascadeChildRelations(currentValue : any, proposedValue : any) {
+        for (let relation of this.field.model.childRelations.findCascadeUpdated()) {
+            let childFieldName = relation.childField.fieldName;
+            let records = relation.childModel.select(`${childFieldName} = '${currentValue}'`);
+            // throw new Error(JSON.stringify(records[0].serialize()));
+            for (let record of records) {
+                record.setValue(childFieldName, proposedValue);
+            }
         }
     }
 }
