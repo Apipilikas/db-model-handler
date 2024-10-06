@@ -18,18 +18,18 @@ export class BaseRelationArray extends BaseArray<Relation> {
     }
 
     findByParentFieldName(fieldName : string) {
-        return this.filter(relation => relation.parentField.fieldName == fieldName);
+        return this.find(relation => relation.parentField.fieldName == fieldName);
     }
 
     findByChildFieldName(fieldName : string) {
-        return this.filter(relation => relation.childField.fieldName == fieldName);
+        return this.find(relation => relation.childField.fieldName == fieldName);
     }
 
-    findCascadeUpdated() {
+    findCascadeUpdatedOnes() {
         return this.filter(relation => relation.cascadeUpdate);
     }
 
-    findCascadeDeleted() {
+    findCascadeDeletedOnes() {
         return this.filter(relation => relation.cascadeDelete)
     }
 }

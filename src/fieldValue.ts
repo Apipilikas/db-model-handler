@@ -134,7 +134,7 @@ export class FieldValue {
     }
 
     private checkForeignKeyConstraint(value : any) {
-        let relation = this.field.model.parentRelations.findByChildFieldName(this.fieldName)?.[0];
+        let relation = this.field.model.parentRelations.findByChildFieldName(this.fieldName);
         if (relation == null) return;
 
         let parentFieldName = relation.parentField.fieldName;
@@ -146,10 +146,10 @@ export class FieldValue {
     }
 
     private updateCascadeChildRelations(currentValue : any, proposedValue : any) {
-        for (let relation of this.field.model.childRelations.findCascadeUpdated()) {
+        for (let relation of this.field.model.childRelations.findCascadeUpdatedOnes()) {
             let childFieldName = relation.childField.fieldName;
             let records = relation.childModel.select(`${childFieldName} = '${currentValue}'`);
-            // throw new Error(JSON.stringify(records[0].serialize()));
+            
             for (let record of records) {
                 record.setValue(childFieldName, proposedValue);
             }

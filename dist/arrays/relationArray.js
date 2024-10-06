@@ -14,15 +14,15 @@ class BaseRelationArray extends baseArray_1.BaseArray {
         return this.find(relation => relation.relationName == relationName);
     }
     findByParentFieldName(fieldName) {
-        return this.filter(relation => relation.parentField.fieldName == fieldName);
+        return this.find(relation => relation.parentField.fieldName == fieldName);
     }
     findByChildFieldName(fieldName) {
-        return this.filter(relation => relation.childField.fieldName == fieldName);
+        return this.find(relation => relation.childField.fieldName == fieldName);
     }
-    findCascadeUpdated() {
+    findCascadeUpdatedOnes() {
         return this.filter(relation => relation.cascadeUpdate);
     }
-    findCascadeDeleted() {
+    findCascadeDeletedOnes() {
         return this.filter(relation => relation.cascadeDelete);
     }
 }

@@ -1,5 +1,6 @@
 import { FieldValueVersion } from "./fieldValue";
 import { Model } from "./model";
+import { Relation } from "./relation";
 export declare const enum RecordState {
     UNMODIFIED = 0,
     ADDED = 1,
@@ -12,6 +13,11 @@ export declare class Record {
     static ORIGINAL_VALUES_KEY: string;
     static CURRENT_VALUES_KEY: string;
     static VALUES_KEY: string;
+    static CHILD_VALUES_KEY: string;
+    static PARENT_VALUE_KEY: string;
+    static CHILD_MODEL_NAME_KEY: string;
+    static CHILD_FIELD_NAME_KEY: string;
+    static CHILD_MODEL_PRIMARY_KEY_VALUES_KEY: string;
     private _model;
     private _state;
     private _fieldValues;
@@ -122,6 +128,7 @@ export declare class Record {
     getChanges(): {
         [k: string]: any;
     };
+    private getCascadeChangesByNonStoredFields;
     /**
      * Gets all changes excluding non stored fields into JSON format.
      */
@@ -138,6 +145,15 @@ export declare class Record {
      * @param relationName The relation name of relation
      */
     getChildRecords(relationName: string): Record[] | null;
+    /**
+     * Gets child records based on given relation.
+     * @param relation The relation
+     */
+    getChildRecordsByRelation(relation: Relation): Record[];
+    /**
+     * Gets primary key values.
+     */
+    getPrimaryKeyValues(): any[];
     /**
      * Adds property to record.
      * @param key The key
@@ -173,5 +189,18 @@ export declare class Record {
     serializeForDisplay(): {
         [k: string]: any;
     };
+    /**
+     * Merges record into this one.
+     * @param record The record to be merged
+     */
+    merge(record: Record): void;
+    /**
+     * Merges json object into this one.
+     * @param obj The JSON format object. If the input is string then it will be JSON parsed.
+     * The object should have fields that belongs to model fields.
+     */
+    mergeBySerialization(obj: any): void;
+    private hasSamePrimaryKeys;
+    private mergeChanges;
 }
 //# sourceMappingURL=record.d.ts.map

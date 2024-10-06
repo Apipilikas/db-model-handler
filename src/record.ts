@@ -1,8 +1,10 @@
+import internal from "stream";
 import { DataTypeValidator } from ".";
 import { FieldValueArray } from "./arrays/fieldValueArray";
 import { FieldValue, FieldValueVersion } from "./fieldValue"
 import { Model } from "./model";
 import { FormatError } from "./utils/errors";
+import { Relation } from "./relation";
 
 export const enum RecordState {
     UNMODIFIED = 0,
@@ -23,6 +25,11 @@ export class Record {
     static ORIGINAL_VALUES_KEY = "original";
     static CURRENT_VALUES_KEY = "current";
     static VALUES_KEY = "values";
+    static CHILD_VALUES_KEY = "childValues";
+    static PARENT_VALUE_KEY = "parentValue"
+    static CHILD_MODEL_NAME_KEY = "childModelName"
+    static CHILD_FIELD_NAME_KEY = "childFieldName"
+    static CHILD_MODEL_PRIMARY_KEY_VALUES_KEY = "childModelPrimaryKeyValues"
 
     private _model : Model;
     private _state = RecordState.DETACHED;
@@ -271,7 +278,7 @@ export class Record {
     }
 
     private deleteCascadeChildRecords() {
-        for (let relation of this._model.childRelations.findCascadeDeleted()) {
+        for (let relation of this._model.childRelations.findCascadeDeletedOnes()) {
             let childRecords = this.getChildRecords(relation.relationName);
             childRecords?.forEach(record => record.delete());
         }
@@ -356,6 +363,35 @@ export class Record {
         return this.getChangesByNonStoredFields(true);
     }
 
+    private getCascadeChangesByNonStoredFields(includeNonStored : boolean) {
+        let obj : {[k: string]: any} = {};
+
+        for (let fieldValue of this._fieldValues) {
+            if (!fieldValue.hasChanged()) continue;
+
+            let parentObj : {[k: string]: any} = {};
+            parentObj[Record.PARENT_VALUE_KEY] = fieldValue.value;
+            let relation = this._model.childRelations.findByParentFieldName(fieldValue.fieldName);
+            if (relation == null) continue;
+
+            let childArray : any[] = [];
+            for (let record of relation.childModel.records) {
+                let childFieldValue = record._fieldValues.findByFieldName(relation.childField.fieldName);
+                if (!includeNonStored && childFieldValue.field.nonStored) continue;
+                let childObj : {[k: string]: any} = {};
+                
+                childObj[Record.CHILD_MODEL_NAME_KEY] = childFieldValue.field.model.modelName;
+                childObj[Record.CHILD_MODEL_PRIMARY_KEY_VALUES_KEY] = record.getPrimaryKeyValues();
+                childObj[Record.CHILD_FIELD_NAME_KEY] = childFieldValue.fieldName;
+                childArray.push(childObj);
+            }
+            parentObj[Record.CHILD_VALUES_KEY] = childArray;
+            obj[fieldValue.fieldName] = parentObj;
+        }
+
+        return obj;
+    }
+
     /**
      * Gets all changes excluding non stored fields into JSON format.
      */
@@ -390,9 +426,16 @@ export class Record {
      */
     getChildRecords(relationName : string) : Record[] | null {
         let relation = this._model.childRelations.findByRelationName(relationName);
-
         if (relation == null) return null;
 
+        return this.getChildRecordsByRelation(relation);
+    }
+
+    /**
+     * Gets child records based on given relation.
+     * @param relation The relation
+     */
+    getChildRecordsByRelation(relation : Relation) {
         let parentFieldName = relation.parentField.fieldName;
         let childFieldName = relation.childField.fieldName;
 
@@ -405,6 +448,30 @@ export class Record {
         }
 
         return results;
+    }
+
+    /**
+     * Gets primary key values.
+     */
+    getPrimaryKeyValues() {
+        let values : any[] = [];
+
+        for (let primaryKey of this._model.getPrimaryKeys()) {
+            switch(this._state) {
+                case RecordState.UNMODIFIED:
+                case RecordState.MODIFIED:
+                case RecordState.DELETED:
+                    values.push(this.getValue(primaryKey, FieldValueVersion.ORIGINAL));
+                    break;
+                case RecordState.ADDED:
+                    values.push(this.getValue(primaryKey));
+                    break;
+                case RecordState.DETACHED:
+                    throw new Error("Record is DETACHED");
+            }
+        }
+
+        return values;
     }
 
     /**
@@ -495,6 +562,66 @@ export class Record {
     serializeForDisplay() {
         if (this._state == RecordState.DELETED) return this.serializeByVersion(true, FieldValueVersion.ORIGINAL);
         return this.serializeByVersion(true, FieldValueVersion.CURRENT);
+    }
+
+    /**
+     * Merges record into this one.
+     * @param record The record to be merged
+     */
+    merge(record : Record) {
+        if (!this.hasSamePrimaryKeys(record)) return;
+
+        // Record to be merged
+        switch (record._state) {
+            case RecordState.UNMODIFIED:
+            case RecordState.MODIFIED:
+                // source Record
+                switch (this._state) {
+                    case RecordState.UNMODIFIED:
+                    case RecordState.MODIFIED:
+                        this.mergeChanges(record);
+                        break;
+                }
+                break;
+            case RecordState.DELETED:
+                if (this._state != RecordState.DELETED) this.delete();
+                break;
+            case RecordState.ADDED:
+                if (this._state != RecordState.ADDED) break;
+                this.mergeChanges(record);
+                break;
+            case RecordState.DETACHED:
+        }
+    }
+
+    /**
+     * Merges json object into this one.
+     * @param obj The JSON format object. If the input is string then it will be JSON parsed.
+     * The object should have fields that belongs to model fields.
+     */
+    mergeBySerialization(obj : any) {
+        if (DataTypeValidator.DataTypeValidator.isString(obj)) obj = JSON.parse(obj);
+
+        let values = Record.getCorrectValuesOrderList(this._model, obj);
+        this.loadData(...values);
+    }
+
+    private hasSamePrimaryKeys(record : Record) {
+        let primaryKeyValues = this.getPrimaryKeyValues(); 
+        let comparedPrimaryKeyValues = record.getPrimaryKeyValues();
+
+        if (comparedPrimaryKeyValues.length != primaryKeyValues.length) return false;
+
+        for (let i = 0; i < primaryKeyValues.length; i++) {
+            if (primaryKeyValues[i] != comparedPrimaryKeyValues[i]) return false;
+        }
+
+        return true;
+    }
+
+    private mergeChanges(record : Record) {
+        let values = record.serializeByVersion(true);
+        this.mergeBySerialization(values);
     }
 
     /**

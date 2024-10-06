@@ -40,7 +40,7 @@ export class FieldNotFoundError extends Error {
 
 export class DuplicateRecordError extends Error {
     constructor(record : Record) {
-        super(`Record with the same primary key/s [${record.model.getPrimaryKeys().toString()}] already exists.`);
+        super(`Record with the primary key/s [${record.model.getPrimaryKeys().toString()}] and values [${record.getPrimaryKeyValues().toString()}] already exists.`);
     }
 }
 

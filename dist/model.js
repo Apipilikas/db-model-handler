@@ -178,8 +178,14 @@ class Model {
             }
         }
         for (let record of model._records) {
-            let copiedRecord = record_1.Record.copy(this, record);
-            this._records.push(copiedRecord);
+            let existingRecord = this._records.findByPrimaryKeys(...record.getPrimaryKeyValues());
+            if (existingRecord != null) {
+                existingRecord.merge(record);
+            }
+            else {
+                let copiedRecord = record_1.Record.copy(this, record);
+                this._records.push(copiedRecord);
+            }
         }
     }
     /**

@@ -5,7 +5,7 @@ export declare class RecordArray extends BaseArray<Record> {
     private _model;
     constructor(model: Model);
     push(...items: Record[]): number;
+    findByPrimaryKeys(...values: any[]): Record | null;
     private isRecordUnique;
-    private getRecordValue;
 }
 //# sourceMappingURL=recordArray.d.ts.map

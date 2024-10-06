@@ -2,7 +2,6 @@ import { FieldArray } from "./arrays/fieldArray";
 import { RecordArray } from "./arrays/recordArray";
 import { RelationArray, RelationModelArray } from "./arrays/relationArray";
 import { Field } from "./field";
-import { FieldValueVersion } from "./fieldValue";
 import { FilterSelector } from "./filterEvaluator/filterSelector";
 import { Record, RecordState } from "./record";
 import { Schema } from "./schema";
@@ -218,8 +217,14 @@ export class Model {
         }
         
         for (let record of model._records) {
-            let copiedRecord = Record.copy(this, record);
-            this._records.push(copiedRecord);
+            let existingRecord = this._records.findByPrimaryKeys(...record.getPrimaryKeyValues());
+            if (existingRecord != null) {
+                existingRecord.merge(record);
+            }
+            else {
+                let copiedRecord = Record.copy(this, record);
+                this._records.push(copiedRecord);
+            }
         }
     }
 

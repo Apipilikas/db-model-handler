@@ -1,4 +1,5 @@
 import { Record } from "../record";
+import { RecordUtils } from "../utils/recordUtils";
 import { FilterOperator, FilterNodeType, IFilterNode } from "./filterNode";
 import { FilterParser } from "./filterParser";
 
@@ -50,7 +51,7 @@ export class FilterEvaluator {
             }
         }
         else if (node?.type == FilterNodeType.FIELD) {
-            return this._record.getValue(node.value);
+            return RecordUtils.getRecordValue(this._record, node.value);
         }
         else if (node?.type == FilterNodeType.VALUE) {
             return FilterParser.replaceQuotes(node.value, 0);

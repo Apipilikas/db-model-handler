@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FilterEvaluator = void 0;
+const recordUtils_1 = require("../utils/recordUtils");
 const filterNode_1 = require("./filterNode");
 const filterParser_1 = require("./filterParser");
 class FilterEvaluator {
@@ -46,7 +47,7 @@ class FilterEvaluator {
             }
         }
         else if ((node === null || node === void 0 ? void 0 : node.type) == filterNode_1.FilterNodeType.FIELD) {
-            return this._record.getValue(node.value);
+            return recordUtils_1.RecordUtils.getRecordValue(this._record, node.value);
         }
         else if ((node === null || node === void 0 ? void 0 : node.type) == filterNode_1.FilterNodeType.VALUE) {
             return filterParser_1.FilterParser.replaceQuotes(node.value, 0);

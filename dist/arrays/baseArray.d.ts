@@ -12,5 +12,6 @@ export declare class BaseArray<T> extends Array<T> {
      * @returns {T} The removed item
      */
     removeByIndex(index: number): T;
+    clear(): void;
 }
 //# sourceMappingURL=baseArray.d.ts.map

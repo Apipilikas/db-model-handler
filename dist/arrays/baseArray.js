@@ -25,5 +25,11 @@ class BaseArray extends Array {
         let removedItem = this.splice(index, 1)[0];
         return removedItem;
     }
+    clear() {
+        let length = this.length;
+        for (let i = 0; i < length; i++) {
+            this.pop();
+        }
+    }
 }
 exports.BaseArray = BaseArray;

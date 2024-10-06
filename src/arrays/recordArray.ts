@@ -1,6 +1,7 @@
-import { FieldValueVersion } from "../fieldValue";
+import { RecordUtils } from "../utils/recordUtils";
 import { Model } from "../model";
-import { Record, RecordState } from "../record";
+import { Record } from "../record";
+import { StringValidator } from "../utils/dataTypeValidator";
 import { DuplicateRecordError } from "../utils/errors";
 import { BaseArray } from "./baseArray";
 
@@ -30,6 +31,23 @@ export class RecordArray extends BaseArray<Record> {
         return this.length;
     }
 
+    findByPrimaryKeys(...values : any[]) {
+        let primaryKeys = this._model.getPrimaryKeys().sort((a, b) => a > b ? 1 : -1);
+        let filter : string = StringValidator.empty;
+        for (let i = 0; i < primaryKeys.length; i++) {
+            if (i > 0) filter += " and ";
+
+            filter += `${primaryKeys[i]} = '${values[i]}'`;
+        }
+
+        let records = this._model.select(filter);
+
+        if (records.length == 0) return null;
+        if (records.length > 1) throw new Error("PRIMARY KEY VIOLATION");
+
+        return records[0];
+    } 
+
     private isRecordUnique(record : Record, addedRecords : Record[]) {
         let primaryKeys = this._model.getPrimaryKeys();
         let records = [...this._model.records, ...addedRecords]
@@ -37,7 +55,7 @@ export class RecordArray extends BaseArray<Record> {
         for (let rec of records) {
             let matchingCount = 0;
             for (let pk of primaryKeys) {
-                if (this.getRecordValue(rec, pk) == this.getRecordValue(record, pk)) matchingCount ++;
+                if (RecordUtils.getRecordValue(rec, pk) == RecordUtils.getRecordValue(record, pk)) matchingCount ++;
             }
 
             if (matchingCount == primaryKeys.length) {
@@ -46,18 +64,5 @@ export class RecordArray extends BaseArray<Record> {
         }
 
         return true;
-    }
-
-    private getRecordValue(record : Record, fieldName : string) {
-        let value : any;
-
-        if (record.state == RecordState.DELETED) {
-            value = record.getValue(fieldName, FieldValueVersion.ORIGINAL);
-        }
-        else {
-            value = record.getValue(fieldName);
-        }
-
-        return value;
     }
 }
