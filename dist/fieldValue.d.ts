@@ -69,6 +69,5 @@ export declare class FieldValue {
      */
     rejectChange(): void;
     private checkForeignKeyConstraint;
-    private updateCascadeChildRelations;
 }
 //# sourceMappingURL=fieldValue.d.ts.map

@@ -23,6 +23,7 @@ class Model {
         this._parentRelations = new relationArray_1.RelationModelArray(this, true);
         this._childRelations = new relationArray_1.RelationModelArray(this, false);
         this.initModel();
+        this.initPrimaryKey();
         this._isInitialized = false;
     }
     get modelName() {
@@ -42,6 +43,9 @@ class Model {
     }
     get childRelations() {
         return this._childRelations;
+    }
+    get primaryKey() {
+        return this._primaryKey;
     }
     /**
      * @internal
@@ -84,6 +88,9 @@ class Model {
      */
     initModel() {
         throw new errors_1.NotInitializedModelError(this.modelName);
+    }
+    initPrimaryKey() {
+        this._primaryKey = this._fields.filter(field => field.primaryKey);
     }
     /**
      * Pushes new field into the FieldArray.
@@ -178,7 +185,7 @@ class Model {
             }
         }
         for (let record of model._records) {
-            let existingRecord = this._records.findByPrimaryKeys(...record.getPrimaryKeyValues());
+            let existingRecord = this._records.findByPrimaryKey(...record.getPrimaryKeyValue());
             if (existingRecord != null) {
                 existingRecord.merge(record);
             }
@@ -257,14 +264,8 @@ class Model {
     /**
      * Gets primary key field names.
      */
-    getPrimaryKeys() {
-        let array = [];
-        this._fields.forEach(field => {
-            if (field.primaryKey) {
-                array.push(field.fieldName);
-            }
-        });
-        return array;
+    getPrimaryKeyName() {
+        return this._primaryKey.map(pk => pk.fieldName);
     }
     /**
      * Sets schema. Only for INTERNAL use.

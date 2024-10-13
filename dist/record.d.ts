@@ -107,6 +107,7 @@ export declare class Record {
      */
     delete(): void;
     private deleteCascadeChildRecords;
+    private updateCascadeChildRecords;
     private remove;
     /**
      * Shows whether record has changes or not.
@@ -150,10 +151,11 @@ export declare class Record {
      * @param relation The relation
      */
     getChildRecordsByRelation(relation: Relation): Record[];
+    private getChildRecordsByValue;
     /**
      * Gets primary key values.
      */
-    getPrimaryKeyValues(): any[];
+    getPrimaryKeyValue(): any[];
     /**
      * Adds property to record.
      * @param key The key
@@ -200,7 +202,6 @@ export declare class Record {
      * The object should have fields that belongs to model fields.
      */
     mergeBySerialization(obj: any): void;
-    private hasSamePrimaryKeys;
     private mergeChanges;
 }
 //# sourceMappingURL=record.d.ts.map

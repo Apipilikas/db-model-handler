@@ -5,6 +5,7 @@ const _1 = require(".");
 const fieldValueArray_1 = require("./arrays/fieldValueArray");
 const fieldValue_1 = require("./fieldValue");
 const errors_1 = require("./utils/errors");
+const recordUtils_1 = require("./utils/recordUtils");
 class Record {
     /**
      * @constructor Record contructor
@@ -162,7 +163,9 @@ class Record {
         if (this._state == 3 /* RecordState.DELETED */)
             throw new Error("Cannot set value on DELETED record.");
         let fieldValue = this._fieldValues.findByFieldName(fieldName);
+        let previousValue = fieldValue.value;
         fieldValue.value = value;
+        this.updateCascadeChildRecords(fieldName, previousValue, value);
         if (this._state != 4 /* RecordState.DETACHED */ && fieldValue.hasChanged() && this._state != 1 /* RecordState.ADDED */)
             this._state = 2 /* RecordState.MODIFIED */;
     }
@@ -223,6 +226,14 @@ class Record {
             let childRecords = this.getChildRecords(relation.relationName);
             childRecords === null || childRecords === void 0 ? void 0 : childRecords.forEach(record => record.delete());
         }
+    }
+    updateCascadeChildRecords(fieldName, previousValue, proposedValue) {
+        let relation = this._model.childRelations.findByParentFieldName(fieldName);
+        if (relation == null || !relation.cascadeUpdate)
+            return;
+        let childFieldName = relation.childField.fieldName;
+        let records = this.getChildRecordsByValue(relation, previousValue); // Before update
+        records.forEach(record => record.setValue(childFieldName, proposedValue)); // Update
     }
     remove() {
         this._state = 4 /* RecordState.DETACHED */;
@@ -311,7 +322,7 @@ class Record {
                     continue;
                 let childObj = {};
                 childObj[Record.CHILD_MODEL_NAME_KEY] = childFieldValue.field.model.modelName;
-                childObj[Record.CHILD_MODEL_PRIMARY_KEY_VALUES_KEY] = record.getPrimaryKeyValues();
+                childObj[Record.CHILD_MODEL_PRIMARY_KEY_VALUES_KEY] = record.getPrimaryKeyValue();
                 childObj[Record.CHILD_FIELD_NAME_KEY] = childFieldValue.fieldName;
                 childArray.push(childObj);
             }
@@ -359,10 +370,13 @@ class Record {
      */
     getChildRecordsByRelation(relation) {
         let parentFieldName = relation.parentField.fieldName;
+        return this.getChildRecordsByValue(relation, this.getValue(parentFieldName));
+    }
+    getChildRecordsByValue(relation, value) {
         let childFieldName = relation.childField.fieldName;
         let results = [];
         for (var record of relation.childModel.records) {
-            if (record.getValue(childFieldName) == this.getValue(parentFieldName)) {
+            if (record.getValue(childFieldName) == value) {
                 results.push(record);
             }
         }
@@ -371,9 +385,9 @@ class Record {
     /**
      * Gets primary key values.
      */
-    getPrimaryKeyValues() {
+    getPrimaryKeyValue() {
         let values = [];
-        for (let primaryKey of this._model.getPrimaryKeys()) {
+        for (let primaryKey of this._model.getPrimaryKeyName()) {
             switch (this._state) {
                 case 0 /* RecordState.UNMODIFIED */:
                 case 2 /* RecordState.MODIFIED */:
@@ -433,7 +447,7 @@ class Record {
         let obj = {};
         switch (this._state) {
             case 3 /* RecordState.DELETED */:
-                for (var primaryKeyFieldName of this._model.getPrimaryKeys()) {
+                for (var primaryKeyFieldName of this._model.getPrimaryKeyName()) {
                     obj[primaryKeyFieldName] = this.getValue(primaryKeyFieldName, fieldValue_1.FieldValueVersion.ORIGINAL);
                 }
                 return obj;
@@ -472,7 +486,7 @@ class Record {
      * @param record The record to be merged
      */
     merge(record) {
-        if (!this.hasSamePrimaryKeys(record))
+        if (!recordUtils_1.RecordUtils.hasSamePrimaryKey(this, record))
             return;
         // Record to be merged
         switch (record._state) {
@@ -508,17 +522,6 @@ class Record {
             obj = JSON.parse(obj);
         let values = Record.getCorrectValuesOrderList(this._model, obj);
         this.loadData(...values);
-    }
-    hasSamePrimaryKeys(record) {
-        let primaryKeyValues = this.getPrimaryKeyValues();
-        let comparedPrimaryKeyValues = record.getPrimaryKeyValues();
-        if (comparedPrimaryKeyValues.length != primaryKeyValues.length)
-            return false;
-        for (let i = 0; i < primaryKeyValues.length; i++) {
-            if (primaryKeyValues[i] != comparedPrimaryKeyValues[i])
-                return false;
-        }
-        return true;
     }
     mergeChanges(record) {
         let values = record.serializeByVersion(true);

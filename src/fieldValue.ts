@@ -72,9 +72,7 @@ export class FieldValue {
         let parsedValue = this._dataTypeValidator.parseValue(value);
 
         this.checkForeignKeyConstraint(parsedValue);
-        let previousValue = this._currentValue;
         this._currentValue = parsedValue;
-        this.updateCascadeChildRelations(previousValue, parsedValue);
     }
 
     /**
@@ -142,17 +140,6 @@ export class FieldValue {
 
         if (!valueExists) {
             throw new ForeignFieldConstraintError(relation, value);
-        }
-    }
-
-    private updateCascadeChildRelations(currentValue : any, proposedValue : any) {
-        for (let relation of this.field.model.childRelations.findCascadeUpdatedOnes()) {
-            let childFieldName = relation.childField.fieldName;
-            let records = relation.childModel.select(`${childFieldName} = '${currentValue}'`);
-            
-            for (let record of records) {
-                record.setValue(childFieldName, proposedValue);
-            }
         }
     }
 }

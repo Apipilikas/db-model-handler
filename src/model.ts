@@ -19,6 +19,7 @@ export class Model {
     private _schema : Schema;
     private _parentRelations : RelationModelArray;
     private _childRelations : RelationModelArray;
+    private _primaryKey : Field[]
     private _isInitialized : boolean = true;
     public strictMode : boolean = true;
 
@@ -34,6 +35,7 @@ export class Model {
         this._childRelations = new RelationModelArray(this, false);
 
         this.initModel();
+        this.initPrimaryKey();
 
         this._isInitialized = false;
     }
@@ -60,6 +62,10 @@ export class Model {
 
     get childRelations() {
         return this._childRelations;
+    }
+
+    get primaryKey() {
+        return this._primaryKey;
     }
 
     /**
@@ -110,6 +116,10 @@ export class Model {
      */
     initModel() {
         throw new NotInitializedModelError(this.modelName);
+    }
+
+    private initPrimaryKey() {
+        this._primaryKey = this._fields.filter(field => field.primaryKey)
     }
 
     /**
@@ -217,7 +227,7 @@ export class Model {
         }
         
         for (let record of model._records) {
-            let existingRecord = this._records.findByPrimaryKeys(...record.getPrimaryKeyValues());
+            let existingRecord = this._records.findByPrimaryKey(...record.getPrimaryKeyValue());
             if (existingRecord != null) {
                 existingRecord.merge(record);
             }
@@ -308,14 +318,8 @@ export class Model {
     /**
      * Gets primary key field names.
      */
-    getPrimaryKeys() {
-        let array : string[] = [];
-        this._fields.forEach(field => {
-            if (field.primaryKey) {
-                array.push(field.fieldName)
-            }
-        });
-        return array;
+    getPrimaryKeyName() {
+        return this._primaryKey.map(pk => pk.fieldName);
     }
 
     /**

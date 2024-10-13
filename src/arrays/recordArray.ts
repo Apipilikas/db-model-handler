@@ -31,8 +31,8 @@ export class RecordArray extends BaseArray<Record> {
         return this.length;
     }
 
-    findByPrimaryKeys(...values : any[]) {
-        let primaryKeys = this._model.getPrimaryKeys().sort((a, b) => a > b ? 1 : -1);
+    findByPrimaryKey(...values : any[]) {
+        let primaryKeys = this._model.getPrimaryKeyName().sort((a, b) => a > b ? 1 : -1);
         let filter : string = StringValidator.empty;
         for (let i = 0; i < primaryKeys.length; i++) {
             if (i > 0) filter += " and ";
@@ -49,18 +49,10 @@ export class RecordArray extends BaseArray<Record> {
     } 
 
     private isRecordUnique(record : Record, addedRecords : Record[]) {
-        let primaryKeys = this._model.getPrimaryKeys();
         let records = [...this._model.records, ...addedRecords]
 
         for (let rec of records) {
-            let matchingCount = 0;
-            for (let pk of primaryKeys) {
-                if (RecordUtils.getRecordValue(rec, pk) == RecordUtils.getRecordValue(record, pk)) matchingCount ++;
-            }
-
-            if (matchingCount == primaryKeys.length) {
-                return false;
-            }
+            if (RecordUtils.hasSamePrimaryKey(rec, record)) return false;
         }
 
         return true;

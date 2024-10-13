@@ -62,9 +62,7 @@ class FieldValue {
             throw new errors_1.ValueValidationError(value, this._dataTypeValidator);
         let parsedValue = this._dataTypeValidator.parseValue(value);
         this.checkForeignKeyConstraint(parsedValue);
-        let previousValue = this._currentValue;
         this._currentValue = parsedValue;
-        this.updateCascadeChildRelations(previousValue, parsedValue);
     }
     /**
      * Creates new FieldValue with default value as value. Used to store new data.
@@ -124,15 +122,6 @@ class FieldValue {
         let valueExists = relation.parentModel.containsFieldValue(parentFieldName, value);
         if (!valueExists) {
             throw new errors_1.ForeignFieldConstraintError(relation, value);
-        }
-    }
-    updateCascadeChildRelations(currentValue, proposedValue) {
-        for (let relation of this.field.model.childRelations.findCascadeUpdatedOnes()) {
-            let childFieldName = relation.childField.fieldName;
-            let records = relation.childModel.select(`${childFieldName} = '${currentValue}'`);
-            for (let record of records) {
-                record.setValue(childFieldName, proposedValue);
-            }
         }
     }
 }

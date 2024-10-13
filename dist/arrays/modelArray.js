@@ -15,10 +15,8 @@ class ModelArray extends baseArray_1.BaseArray {
         return super.push(...items);
     }
     findByModelName(modelName) {
-        let model = this.find(model => model.modelName == modelName);
-        if (model == null)
-            throw new Error(`No model found with name ${modelName}`);
-        return model;
+        return this.strictFind(model => model.modelName == modelName, null, `No model found with name ${modelName}`);
+        ;
     }
     contains(modelName) {
         let model = this.find(model => model.modelName == modelName);

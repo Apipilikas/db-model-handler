@@ -13,6 +13,18 @@ class RecordUtils {
         }
         return value;
     }
+    static hasSamePrimaryKey(record, comparedRecord) {
+        let primaryKeys = record.model.getPrimaryKeyName();
+        let matchingCount = 0;
+        for (let pk of primaryKeys) {
+            if (this.getRecordValue(record, pk) == this.getRecordValue(comparedRecord, pk))
+                matchingCount++;
+        }
+        if (matchingCount == primaryKeys.length) {
+            return true;
+        }
+        return false;
+    }
 }
 exports.RecordUtils = RecordUtils;
 module.exports = { RecordUtils };

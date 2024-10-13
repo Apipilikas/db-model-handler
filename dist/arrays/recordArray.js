@@ -25,8 +25,8 @@ class RecordArray extends baseArray_1.BaseArray {
         });
         return this.length;
     }
-    findByPrimaryKeys(...values) {
-        let primaryKeys = this._model.getPrimaryKeys().sort((a, b) => a > b ? 1 : -1);
+    findByPrimaryKey(...values) {
+        let primaryKeys = this._model.getPrimaryKeyName().sort((a, b) => a > b ? 1 : -1);
         let filter = dataTypeValidator_1.StringValidator.empty;
         for (let i = 0; i < primaryKeys.length; i++) {
             if (i > 0)
@@ -41,17 +41,10 @@ class RecordArray extends baseArray_1.BaseArray {
         return records[0];
     }
     isRecordUnique(record, addedRecords) {
-        let primaryKeys = this._model.getPrimaryKeys();
         let records = [...this._model.records, ...addedRecords];
         for (let rec of records) {
-            let matchingCount = 0;
-            for (let pk of primaryKeys) {
-                if (recordUtils_1.RecordUtils.getRecordValue(rec, pk) == recordUtils_1.RecordUtils.getRecordValue(record, pk))
-                    matchingCount++;
-            }
-            if (matchingCount == primaryKeys.length) {
+            if (recordUtils_1.RecordUtils.hasSamePrimaryKey(rec, record))
                 return false;
-            }
         }
         return true;
     }

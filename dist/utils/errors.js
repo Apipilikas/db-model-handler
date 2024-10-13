@@ -39,7 +39,7 @@ class FieldNotFoundError extends Error {
 exports.FieldNotFoundError = FieldNotFoundError;
 class DuplicateRecordError extends Error {
     constructor(record) {
-        super(`Record with the primary key/s [${record.model.getPrimaryKeys().toString()}] and values [${record.getPrimaryKeyValues().toString()}] already exists.`);
+        super(`Record with the primary key/s [${record.model.getPrimaryKeyName().toString()}] and values [${record.getPrimaryKeyValue().toString()}] already exists.`);
     }
 }
 exports.DuplicateRecordError = DuplicateRecordError;

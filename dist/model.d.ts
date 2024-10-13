@@ -15,6 +15,7 @@ export declare class Model {
     private _schema;
     private _parentRelations;
     private _childRelations;
+    private _primaryKey;
     private _isInitialized;
     strictMode: boolean;
     /**
@@ -28,6 +29,7 @@ export declare class Model {
     get schema(): Schema;
     get parentRelations(): RelationModelArray;
     get childRelations(): RelationModelArray;
+    get primaryKey(): Field[];
     /**
      * Deserializes JSON format object into Model instance.
      * @param obj The JSON format object. If the input is string then it will be JSON parsed.
@@ -50,6 +52,7 @@ export declare class Model {
      * Initializes the model. Fields should be initialized here.
      */
     initModel(): void;
+    private initPrimaryKey;
     /**
      * Pushes new field into the FieldArray.
      * @param name The field name
@@ -142,7 +145,7 @@ export declare class Model {
     /**
      * Gets primary key field names.
      */
-    getPrimaryKeys(): string[];
+    getPrimaryKeyName(): string[];
     containsFieldValue(fieldName: string, value: any): boolean;
 }
 //# sourceMappingURL=model.d.ts.map
