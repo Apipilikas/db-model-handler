@@ -93,6 +93,7 @@ export declare class Record {
      * @param value The proposed value
      */
     setValue(fieldName: string, value: any): void;
+    private setFieldValue;
     private initFieldValues;
     private loadFirstData;
     /**

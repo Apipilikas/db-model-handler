@@ -214,8 +214,12 @@ export class Record {
 
         let fieldValue = this._fieldValues.findByFieldName(fieldName);
         let previousValue = fieldValue.value;
+        this.setFieldValue(fieldValue, value);
+        this.updateCascadeChildRecords(fieldName, previousValue, value);
+    }
+
+    private setFieldValue(fieldValue : FieldValue, value : any) {
         fieldValue.value = value;
-        this.updateCascadeChildRecords(fieldName,previousValue, value);
 
         if (this._state != RecordState.DETACHED && fieldValue.hasChanged() && this._state != RecordState.ADDED) 
             this._state = RecordState.MODIFIED;
@@ -254,7 +258,7 @@ export class Record {
             
             if (value == undefined) continue;
 
-            this._fieldValues[i].value = value;
+            this.setFieldValue(this._fieldValues[i], value);
         }
     }
 
@@ -479,11 +483,10 @@ export class Record {
                 case RecordState.DELETED:
                     values.push(this.getValue(primaryKey, FieldValueVersion.ORIGINAL));
                     break;
+                case RecordState.DETACHED:
                 case RecordState.ADDED:
                     values.push(this.getValue(primaryKey));
                     break;
-                case RecordState.DETACHED:
-                    throw new Error("Record is DETACHED");
             }
         }
 
@@ -591,7 +594,7 @@ export class Record {
         switch (record._state) {
             case RecordState.UNMODIFIED:
             case RecordState.MODIFIED:
-                // source Record
+                // Source Record
                 switch (this._state) {
                     case RecordState.UNMODIFIED:
                     case RecordState.MODIFIED:

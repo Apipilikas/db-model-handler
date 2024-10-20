@@ -164,8 +164,11 @@ class Record {
             throw new Error("Cannot set value on DELETED record.");
         let fieldValue = this._fieldValues.findByFieldName(fieldName);
         let previousValue = fieldValue.value;
-        fieldValue.value = value;
+        this.setFieldValue(fieldValue, value);
         this.updateCascadeChildRecords(fieldName, previousValue, value);
+    }
+    setFieldValue(fieldValue, value) {
+        fieldValue.value = value;
         if (this._state != 4 /* RecordState.DETACHED */ && fieldValue.hasChanged() && this._state != 1 /* RecordState.ADDED */)
             this._state = 2 /* RecordState.MODIFIED */;
     }
@@ -197,7 +200,7 @@ class Record {
             let value = values[i];
             if (value == undefined)
                 continue;
-            this._fieldValues[i].value = value;
+            this.setFieldValue(this._fieldValues[i], value);
         }
     }
     /**
@@ -394,11 +397,10 @@ class Record {
                 case 3 /* RecordState.DELETED */:
                     values.push(this.getValue(primaryKey, fieldValue_1.FieldValueVersion.ORIGINAL));
                     break;
+                case 4 /* RecordState.DETACHED */:
                 case 1 /* RecordState.ADDED */:
                     values.push(this.getValue(primaryKey));
                     break;
-                case 4 /* RecordState.DETACHED */:
-                    throw new Error("Record is DETACHED");
             }
         }
         return values;
@@ -492,7 +494,7 @@ class Record {
         switch (record._state) {
             case 0 /* RecordState.UNMODIFIED */:
             case 2 /* RecordState.MODIFIED */:
-                // source Record
+                // Source Record
                 switch (this._state) {
                     case 0 /* RecordState.UNMODIFIED */:
                     case 2 /* RecordState.MODIFIED */:
