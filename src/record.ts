@@ -621,13 +621,15 @@ export class Record {
     mergeBySerialization(obj : any) {
         if (DataTypeValidator.DataTypeValidator.isString(obj)) obj = JSON.parse(obj);
 
-        let values = Record.getCorrectValuesOrderList(this._model, obj);
-        this.loadData(...values);
+        for (let objEntry of Object.entries(obj)) {
+            this.setValue(objEntry[0], objEntry[1]);
+        }
     }
 
     private mergeChanges(record : Record) {
         let values = record.serializeByVersion(true);
-        this.mergeBySerialization(values);
+        let orderedValues = Record.getCorrectValuesOrderList(this._model, values);
+        this.loadData(...orderedValues);
     }
 
     /**

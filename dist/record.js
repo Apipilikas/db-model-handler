@@ -522,12 +522,14 @@ class Record {
     mergeBySerialization(obj) {
         if (_1.DataTypeValidator.DataTypeValidator.isString(obj))
             obj = JSON.parse(obj);
-        let values = Record.getCorrectValuesOrderList(this._model, obj);
-        this.loadData(...values);
+        for (let objEntry of Object.entries(obj)) {
+            this.setValue(objEntry[0], objEntry[1]);
+        }
     }
     mergeChanges(record) {
         let values = record.serializeByVersion(true);
-        this.mergeBySerialization(values);
+        let orderedValues = Record.getCorrectValuesOrderList(this._model, values);
+        this.loadData(...orderedValues);
     }
     /**
      * Only for INTERNAL use. Sets status when record is pushed to RecordArray.
