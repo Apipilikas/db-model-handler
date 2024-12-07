@@ -1,61 +1,67 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ForeignFieldConstraintError = exports.MergeModelError = exports.CastError = exports.FormatError = exports.ValueValidationError = exports.ReadOnlyFieldError = exports.DuplicateRecordError = exports.FieldNotFoundError = exports.ClosingCharNotFoundError = exports.NotInitializedSchemaError = exports.NotInitializedModelError = exports.AlreadyInitializedSchemaError = exports.AlreadyInitializedModelError = void 0;
-class AlreadyInitializedModelError extends Error {
+exports.ForeignFieldConstraintError = exports.MergeModelError = exports.CastError = exports.FormatError = exports.ValueValidationError = exports.ReadOnlyFieldError = exports.DuplicateRecordError = exports.FieldNotFoundError = exports.ClosingCharNotFoundError = exports.NotInitializedSchemaError = exports.NotInitializedModelError = exports.AlreadyInitializedSchemaError = exports.AlreadyInitializedModelError = exports.DBModelHandlerError = void 0;
+class DBModelHandlerError extends Error {
+    constructor(message) {
+        super(message);
+    }
+}
+exports.DBModelHandlerError = DBModelHandlerError;
+class AlreadyInitializedModelError extends DBModelHandlerError {
     constructor(modelName) {
         super(`Cannot change model [${modelName}] structure. Model has already been initialized.`);
     }
 }
 exports.AlreadyInitializedModelError = AlreadyInitializedModelError;
-class AlreadyInitializedSchemaError extends Error {
+class AlreadyInitializedSchemaError extends DBModelHandlerError {
     constructor(schemaName) {
         super(`Cannot change schema [${schemaName}] structure. Schema has already meen initialized.`);
     }
 }
 exports.AlreadyInitializedSchemaError = AlreadyInitializedSchemaError;
-class NotInitializedModelError extends Error {
+class NotInitializedModelError extends DBModelHandlerError {
     constructor(modelName) {
         super(`Model [${modelName}] has not been initialized. Function initModel has to be overriden.`);
     }
 }
 exports.NotInitializedModelError = NotInitializedModelError;
-class NotInitializedSchemaError extends Error {
+class NotInitializedSchemaError extends DBModelHandlerError {
     constructor(schemaName) {
         super(`Schema [${schemaName}] has not been initialized. Function initSchema has to be overriden.`);
     }
 }
 exports.NotInitializedSchemaError = NotInitializedSchemaError;
-class ClosingCharNotFoundError extends Error {
+class ClosingCharNotFoundError extends DBModelHandlerError {
     constructor(str, closingChar) {
         super(`Closing char [${closingChar}] not found in given string [${str}]`);
     }
 }
 exports.ClosingCharNotFoundError = ClosingCharNotFoundError;
-class FieldNotFoundError extends Error {
+class FieldNotFoundError extends DBModelHandlerError {
     constructor(fieldName, modelName) {
         super(`Field with name [${fieldName}] was not found on model [${modelName}]`);
     }
 }
 exports.FieldNotFoundError = FieldNotFoundError;
-class DuplicateRecordError extends Error {
+class DuplicateRecordError extends DBModelHandlerError {
     constructor(record) {
         super(`Record with the primary key/s [${record.model.getPrimaryKeyName().toString()}] and values [${record.getPrimaryKeyValue().toString()}] already exists.`);
     }
 }
 exports.DuplicateRecordError = DuplicateRecordError;
-class ReadOnlyFieldError extends Error {
+class ReadOnlyFieldError extends DBModelHandlerError {
     constructor(fieldName) {
         super(`Field [${fieldName}] is readOnly. Changing values is not permitted.`);
     }
 }
 exports.ReadOnlyFieldError = ReadOnlyFieldError;
-class ValueValidationError extends Error {
+class ValueValidationError extends DBModelHandlerError {
     constructor(value, validator) {
         super(`Value validation failed. Given value [${value}] of type [${typeof (value)}] does not agree with the field dataType [${validator.dataType}]`);
     }
 }
 exports.ValueValidationError = ValueValidationError;
-class FormatError extends Error {
+class FormatError extends DBModelHandlerError {
     constructor(propertyName) {
         super(`Input does not have the expected format. Property [${propertyName}] not found.`);
     }
@@ -67,7 +73,7 @@ class FormatError extends Error {
     }
 }
 exports.FormatError = FormatError;
-class CastError extends Error {
+class CastError extends DBModelHandlerError {
     constructor(obj, expectedType) {
         super(`Casting object [${obj}] to [${expectedType}] failed. The object [${obj}] is of type [${typeof obj}]`);
     }
@@ -78,13 +84,13 @@ class CastError extends Error {
     }
 }
 exports.CastError = CastError;
-class MergeModelError extends Error {
+class MergeModelError extends DBModelHandlerError {
     constructor(mergedModelName, modelName, fieldName) {
         super(`Model [${modelName}] does not have the field [${fieldName}] that merging model [${mergedModelName}] appears to have.`);
     }
 }
 exports.MergeModelError = MergeModelError;
-class ForeignFieldConstraintError extends Error {
+class ForeignFieldConstraintError extends DBModelHandlerError {
     constructor(relation, value) {
         super(`Foreign field [${relation.childField.fieldName}] with value [${value}] isn't found on the parent model [${relation.parentModel.modelName}].`);
     }
