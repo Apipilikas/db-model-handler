@@ -416,10 +416,11 @@ export class Record {
     }
 
     /**
-     * Gets parent record based on given relation name.
+     * Gets parent record based on given relation name and field value version.
      * @param relationName The relation name of relation
+     * @param version The field value version
      */
-    getParentRecord(relationName : string) : Record | null {
+    getParentRecord(relationName : string, version : FieldValueVersion = FieldValueVersion.CURRENT) : Record | null {
         let relation = this._model.parentRelations.findByRelationName(relationName);
 
         if (relation == null) return null;
@@ -428,7 +429,7 @@ export class Record {
         let childFieldName = relation.childField.fieldName;
 
         for (var record of relation.parentModel.records) {
-            if (record.getValue(parentFieldName) == this.getValue(childFieldName)) {
+            if (record.getValue(parentFieldName, version) == this.getValue(childFieldName, version)) {
                 return record;
             }
         }
@@ -440,29 +441,36 @@ export class Record {
      * Gets child records based on given relation name.
      * @param relationName The relation name of relation
      */
-    getChildRecords(relationName : string) : Record[] | null {
+    getChildRecords(relationName : string) : Record[] | null
+
+    /**
+     * Gets child records based on given relation name and field value version.
+     * @param relationName The relation name of relation
+     * @param version The field value version
+     */
+    getChildRecords(relationName : string, version : FieldValueVersion = FieldValueVersion.CURRENT) : Record[] | null {
         let relation = this._model.childRelations.findByRelationName(relationName);
         if (relation == null) return null;
 
-        return this.getChildRecordsByRelation(relation);
+        return this.getChildRecordsByRelation(relation, version);
     }
 
     /**
-     * Gets child records based on given relation.
+     * Gets child records based on given relation and field value version.
      * @param relation The relation
      */
-    getChildRecordsByRelation(relation : Relation) {
+    getChildRecordsByRelation(relation : Relation, version : FieldValueVersion = FieldValueVersion.CURRENT) {
         let parentFieldName = relation.parentField.fieldName;
-        return this.getChildRecordsByValue(relation, this.getValue(parentFieldName));
+        return this.getChildRecordsByValue(relation, this.getValue(parentFieldName), version);
     }
 
-    private getChildRecordsByValue(relation : Relation, value : any) {
+    private getChildRecordsByValue(relation : Relation, value : any, version : FieldValueVersion = FieldValueVersion.CURRENT) {
         let childFieldName = relation.childField.fieldName;
 
         let results: Record[] = [];
 
         for (var record of relation.childModel.records) {
-            if (record.getValue(childFieldName) == value) {
+            if (record.getValue(childFieldName, version) == value) {
                 results.push(record);
             }
         }

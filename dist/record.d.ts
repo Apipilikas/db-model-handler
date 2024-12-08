@@ -138,20 +138,21 @@ export declare class Record {
         [k: string]: any;
     };
     /**
-     * Gets parent record based on given relation name.
+     * Gets parent record based on given relation name and field value version.
      * @param relationName The relation name of relation
+     * @param version The field value version
      */
-    getParentRecord(relationName: string): Record | null;
+    getParentRecord(relationName: string, version?: FieldValueVersion): Record | null;
     /**
      * Gets child records based on given relation name.
      * @param relationName The relation name of relation
      */
     getChildRecords(relationName: string): Record[] | null;
     /**
-     * Gets child records based on given relation.
+     * Gets child records based on given relation and field value version.
      * @param relation The relation
      */
-    getChildRecordsByRelation(relation: Relation): Record[];
+    getChildRecordsByRelation(relation: Relation, version?: FieldValueVersion): Record[];
     private getChildRecordsByValue;
     /**
      * Gets primary key values.
