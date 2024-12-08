@@ -461,7 +461,7 @@ export class Record {
      */
     getChildRecordsByRelation(relation : Relation, version : FieldValueVersion = FieldValueVersion.CURRENT) {
         let parentFieldName = relation.parentField.fieldName;
-        return this.getChildRecordsByValue(relation, this.getValue(parentFieldName), version);
+        return this.getChildRecordsByValue(relation, this.getValue(parentFieldName, version), version);
     }
 
     private getChildRecordsByValue(relation : Relation, value : any, version : FieldValueVersion = FieldValueVersion.CURRENT) {
