@@ -173,14 +173,18 @@ export class Model {
      * Commits changes to all records.
      */
     acceptChanges() : void {
-        this._records.forEach(record => record.acceptChanges());
+        for (let i = this._records.length - 1; 0 <= i; i--) {
+            this._records[i].acceptChanges();
+        }
     }
 
     /**
      * Rolls back changes in every record.
      */
     rejectChanges() : void {
-        this._records.forEach(record => record.rejectChanges());
+        for (let i = this._records.length - 1; 0 <= i; i--) {
+            this._records[i].rejectChanges();
+        }
     }
 
     private getChangesBySave(forSave : boolean) {

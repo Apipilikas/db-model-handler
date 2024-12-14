@@ -176,8 +176,8 @@ export class BooleanValidator extends DataTypeValidator implements IDataTypeVali
     constructor() { super(DataType.BOOLEAN) }
 
     override parseValue(value : any) : boolean {
-        if (BooleanValidator.isString(value)) return this.defaultValue;
-        return this.defaultValue;
+        if (!BooleanValidator.isBoolean(value)) return this.defaultValue;
+        return Boolean(value);
     }
 
     override get defaultValue() : boolean { 

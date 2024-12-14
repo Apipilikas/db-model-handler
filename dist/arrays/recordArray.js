@@ -40,6 +40,9 @@ class RecordArray extends baseArray_1.BaseArray {
             throw new Error("PRIMARY KEY VIOLATION");
         return records[0];
     }
+    findByFieldName(fieldName, value) {
+        return this.find(record => recordUtils_1.RecordUtils.getRecordValue(record, fieldName) == value);
+    }
     isRecordUnique(record, addedRecords) {
         let records = [...this._model.records, ...addedRecords];
         for (let rec of records) {

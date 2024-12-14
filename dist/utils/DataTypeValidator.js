@@ -142,9 +142,9 @@ exports.FloatValidator = FloatValidator;
 class BooleanValidator extends DataTypeValidator {
     constructor() { super(DataType.BOOLEAN); }
     parseValue(value) {
-        if (BooleanValidator.isString(value))
+        if (!BooleanValidator.isBoolean(value))
             return this.defaultValue;
-        return this.defaultValue;
+        return Boolean(value);
     }
     get defaultValue() {
         return false;
