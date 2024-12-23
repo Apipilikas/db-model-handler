@@ -19,6 +19,12 @@ class BaseRelationArray extends baseArray_1.BaseArray {
     findByChildFieldName(fieldName) {
         return this.find(relation => relation.childField.fieldName == fieldName);
     }
+    filterByParentFieldName(fieldName) {
+        return this.filter(relation => relation.parentField.fieldName == fieldName);
+    }
+    filterByChildFieldName(fieldName) {
+        return this.filter(relation => relation.childField.fieldName == fieldName);
+    }
     findCascadeUpdatedOnes() {
         return this.filter(relation => relation.cascadeUpdate);
     }

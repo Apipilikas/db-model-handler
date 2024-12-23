@@ -8,6 +8,8 @@ export declare class BaseRelationArray extends BaseArray<Relation> {
     findByRelationName(relationName: string): Relation | undefined;
     findByParentFieldName(fieldName: string): Relation | undefined;
     findByChildFieldName(fieldName: string): Relation | undefined;
+    filterByParentFieldName(fieldName: string): Relation[];
+    filterByChildFieldName(fieldName: string): Relation[];
     findCascadeUpdatedOnes(): Relation[];
     findCascadeDeletedOnes(): Relation[];
 }

@@ -130,7 +130,6 @@ export declare class Record {
     getChanges(): {
         [k: string]: any;
     };
-    private getCascadeChangesByNonStoredFields;
     /**
      * Gets all changes excluding non stored fields into JSON format.
      */

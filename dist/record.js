@@ -231,12 +231,12 @@ class Record {
         }
     }
     updateCascadeChildRecords(fieldName, previousValue, proposedValue) {
-        let relation = this._model.childRelations.findByParentFieldName(fieldName);
-        if (relation == null || !relation.cascadeUpdate)
-            return;
-        let childFieldName = relation.childField.fieldName;
-        let records = this.getChildRecordsByValue(relation, previousValue); // Before update
-        records.forEach(record => record.setValue(childFieldName, proposedValue)); // Update
+        let relations = this._model.childRelations.filterByParentFieldName(fieldName);
+        for (let relation of relations) {
+            let childFieldName = relation.childField.fieldName;
+            let records = this.getChildRecordsByValue(relation, previousValue); // Before update
+            records.forEach(record => record.setValue(childFieldName, proposedValue)); // Update
+        }
     }
     remove() {
         this._state = 4 /* RecordState.DETACHED */;
@@ -307,32 +307,6 @@ class Record {
      */
     getChanges() {
         return this.getChangesByNonStoredFields(true);
-    }
-    getCascadeChangesByNonStoredFields(includeNonStored) {
-        let obj = {};
-        for (let fieldValue of this._fieldValues) {
-            if (!fieldValue.hasChanged())
-                continue;
-            let parentObj = {};
-            parentObj[Record.PARENT_VALUE_KEY] = fieldValue.value;
-            let relation = this._model.childRelations.findByParentFieldName(fieldValue.fieldName);
-            if (relation == null)
-                continue;
-            let childArray = [];
-            for (let record of relation.childModel.records) {
-                let childFieldValue = record._fieldValues.findByFieldName(relation.childField.fieldName);
-                if (!includeNonStored && childFieldValue.field.nonStored)
-                    continue;
-                let childObj = {};
-                childObj[Record.CHILD_MODEL_NAME_KEY] = childFieldValue.field.model.modelName;
-                childObj[Record.CHILD_MODEL_PRIMARY_KEY_VALUES_KEY] = record.getPrimaryKeyValue();
-                childObj[Record.CHILD_FIELD_NAME_KEY] = childFieldValue.fieldName;
-                childArray.push(childObj);
-            }
-            parentObj[Record.CHILD_VALUES_KEY] = childArray;
-            obj[fieldValue.fieldName] = parentObj;
-        }
-        return obj;
     }
     /**
      * Gets all changes excluding non stored fields into JSON format.

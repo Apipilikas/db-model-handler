@@ -25,6 +25,14 @@ export class BaseRelationArray extends BaseArray<Relation> {
         return this.find(relation => relation.childField.fieldName == fieldName);
     }
 
+    filterByParentFieldName(fieldName : string) {
+        return this.filter(relation => relation.parentField.fieldName == fieldName);
+    }
+
+    filterByChildFieldName(fieldName : string) {
+        return this.filter(relation => relation.childField.fieldName == fieldName);
+    }
+
     findCascadeUpdatedOnes() {
         return this.filter(relation => relation.cascadeUpdate);
     }
