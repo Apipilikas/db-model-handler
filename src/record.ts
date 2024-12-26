@@ -3,9 +3,11 @@ import { DataTypeValidator } from ".";
 import { FieldValueArray } from "./arrays/fieldValueArray";
 import { FieldValue, FieldValueVersion } from "./fieldValue"
 import { Model } from "./model";
-import { FormatError } from "./utils/errors";
+import { ForeignFieldReferenceError, FormatError } from "./utils/errors";
 import { Relation } from "./relation";
 import { RecordUtils } from "./utils/recordUtils";
+import { RecordDeletedEventArgs, RecordDeletingEventArgs, ValueChangeEventArgs } from "./events/eventArgs";
+import { ChangesTracker } from "./utils/changesTracker";
 
 export const enum RecordState {
     UNMODIFIED = 0,
@@ -37,6 +39,7 @@ export class Record {
     private _fieldValues : FieldValueArray;
     private _properties = new Map();
     private _origin : RecordOrigin;
+    private _changesTracker : ChangesTracker;
 
     /**
      * @constructor Record contructor
@@ -45,6 +48,7 @@ export class Record {
     protected constructor(model : Model) {
         this._model = model;
         this._fieldValues = new FieldValueArray();
+        this._changesTracker = new ChangesTracker(this);
     }
 
     get model() {
@@ -219,10 +223,17 @@ export class Record {
     }
 
     private setFieldValue(fieldValue : FieldValue, value : any) {
-        fieldValue.value = value;
+        let previousValue = fieldValue.value;
+        let eventArgs = new ValueChangeEventArgs(fieldValue.field, this, previousValue, value);
+        this._model.onValueChanging(eventArgs);
 
-        if (this._state != RecordState.DETACHED && fieldValue.hasChanged() && this._state != RecordState.ADDED) 
-            this._state = RecordState.MODIFIED;
+        fieldValue.value = eventArgs.proposedValue;
+        if (this._changesTracker.isOnChangeMode()) this._changesTracker.pushChange(fieldValue, value);
+
+        if (!fieldValue.hasChanged()) return;
+        this._model.onValueChanged(new ValueChangeEventArgs(fieldValue.field, this, previousValue, fieldValue.value));
+
+        if (this._state != RecordState.DETACHED && this._state != RecordState.ADDED) this._state = RecordState.MODIFIED;
     }
 
     private initFieldValues(startIndex = 0) {
@@ -270,13 +281,23 @@ export class Record {
         switch (this._state) {
             case RecordState.UNMODIFIED:
             case RecordState.MODIFIED:
+                if (!this.shouldDeleteRecord()) return;
+
                 this.deleteCascadeChildRecords();
                 this._state = RecordState.DELETED;
+
+                this._model.onRecordDeleted(new RecordDeletedEventArgs(this));
                 break;
+
             case RecordState.ADDED:
+                if (!this.shouldDeleteRecord()) return;
+
                 this.deleteCascadeChildRecords();
                 this.remove();
+
+                this._model.onRecordDeleted(new RecordDeletedEventArgs(this));
                 break;
+
             case RecordState.DELETED:
                 throw new Error("Record is already DELETED.");
             case RecordState.DETACHED:
@@ -284,10 +305,22 @@ export class Record {
         }
     }
 
+    private shouldDeleteRecord() {
+        let event = new RecordDeletingEventArgs(this);
+        this._model.onRecordDeleting(event);
+        return !event.cancel;
+    }
+
     private deleteCascadeChildRecords() {
-        for (let relation of this._model.childRelations.findCascadeDeletedOnes()) {
-            let childRecords = this.getChildRecords(relation.relationName);
-            childRecords?.forEach(record => record.delete());
+        for (let relation of this._model.childRelations) {
+            let childRecords = this.getChildRecordsByRelation(relation);
+
+            if (relation.cascadeDelete) {
+                childRecords.forEach(record => record.delete());
+            }
+            else {
+                if (childRecords.length > 0) throw new ForeignFieldReferenceError(relation);
+            }
         }
     }
 
@@ -355,6 +388,18 @@ export class Record {
             case RecordState.DETACHED:
                 throw new Error("Record is DETACHED. Cannot reject changes.");
         }
+    }
+
+    beginChanges() {
+        this._changesTracker.beginChanges();
+    }
+
+    endChanges() {
+        this._changesTracker.endChanges();
+    }
+
+    cancelChanges() {
+        this._changesTracker.cancelChanges();
     }
 
     private getChangesByNonStoredFields(includeNonStored : boolean) {
@@ -599,17 +644,37 @@ export class Record {
      * The object should have fields that belongs to model fields.
      */
     mergeBySerialization(obj : any) {
-        if (DataTypeValidator.DataTypeValidator.isString(obj)) obj = JSON.parse(obj);
+        try {
+            this.beginChanges();
 
-        for (let objEntry of Object.entries(obj)) {
-            this.setValue(objEntry[0], objEntry[1]);
+            if (DataTypeValidator.DataTypeValidator.isString(obj)) obj = JSON.parse(obj);
+    
+            for (let objEntry of Object.entries(obj)) {
+                this.setValue(objEntry[0], objEntry[1]);
+            }
+
+            this.endChanges();
+        }
+        catch(e) {
+            this.cancelChanges();
+            throw e;
         }
     }
 
     private mergeChanges(record : Record) {
-        let values = record.serializeByVersion(true);
-        let orderedValues = Record.getCorrectValuesOrderList(this._model, values);
-        this.loadData(...orderedValues);
+        try {
+            this.beginChanges();
+
+            let values = record.serializeByVersion(true);
+            let orderedValues = Record.getCorrectValuesOrderList(this._model, values);
+            this.loadData(...orderedValues);
+
+            this.endChanges();
+        }
+        catch(e) {
+            this.cancelChanges();
+            throw e;
+        }
     }
 
     /**

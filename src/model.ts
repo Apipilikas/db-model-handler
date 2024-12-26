@@ -7,6 +7,8 @@ import { Record, RecordState } from "./record";
 import { Schema } from "./schema";
 import { DataType, DataTypeValidator } from "./utils/dataTypeValidator";
 import { MergeModelError, NotInitializedModelError, FormatError } from "./utils/errors";
+import { RecordDeletedEventArgs, RecordDeletingEventArgs, ValueChangeEventArgs } from "./events/eventArgs";
+import { IMHEvent, ValueChangingEvent, ValueChangedEvent, RecordDeletingEvent, RecordDeletedEvent } from "./events/events";
 
 export class Model {
     static NAME_KEY = "modelName";
@@ -20,8 +22,14 @@ export class Model {
     private _parentRelations : RelationModelArray;
     private _childRelations : RelationModelArray;
     private _primaryKey : Field[]
-    private _isInitialized : boolean = true;
+    private _isInitialized : boolean = false;
     public strictMode : boolean = true;
+
+    // Events
+    private _valueChanging : ValueChangingEvent = new ValueChangingEvent();
+    private _valueChanged : ValueChangedEvent = new ValueChangedEvent();
+    private _recordDeleting : RecordDeletingEvent = new RecordDeletingEvent();
+    private _recordDeleted : RecordDeletedEvent = new RecordDeletedEvent();
 
     /**
      * @constructor Model constructor
@@ -37,7 +45,7 @@ export class Model {
         this.initModel();
         this.initPrimaryKey();
 
-        this._isInitialized = false;
+        this._isInitialized = true;
     }
 
     get modelName() : string {
@@ -73,6 +81,23 @@ export class Model {
      */
     get isInitialized() {
         return this._isInitialized;
+    }
+
+    // Events
+    get valueChanging() : IMHEvent {
+        return this._valueChanging;
+    }
+
+    get valueChanged() : IMHEvent {
+        return this._valueChanged;
+    }
+
+    get recordDeleting() : IMHEvent {
+        return this._recordDeleting;
+    }
+
+    get recordDeleted() : IMHEvent {
+        return this._recordDeleted;
     }
 
     /**
@@ -333,6 +358,40 @@ export class Model {
      */
     setSchema(schema : Schema) {
         this._schema = schema;
+    }
+
+    /**
+     * 
+     * @internal
+     */
+    onValueChanging(arg : ValueChangeEventArgs) {
+        this._valueChanging.raiseEvent(this, arg);
+    }
+
+    /**
+     * 
+     * @internal
+     */
+    onValueChanged(arg : ValueChangeEventArgs) {
+        this._valueChanged.raiseEvent(this, arg);
+    }
+
+    /**
+     * 
+     * @param arg 
+     * @internal
+     */
+    onRecordDeleting(arg : RecordDeletingEventArgs) {
+        this._recordDeleting.raiseEvent(this, arg);
+    }
+
+    /**
+     * 
+     * @param arg 
+     * @internal
+     */
+    onRecordDeleted(arg : RecordDeletedEventArgs) {
+        this._recordDeleted.raiseEvent(this, arg);
     }
 
     containsFieldValue(fieldName : string, value : any) {

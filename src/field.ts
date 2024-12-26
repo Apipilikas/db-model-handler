@@ -15,6 +15,7 @@ export class Field {
     private _readOnly = false;
     private _nonStored = false;
     private _defaultValue : any;
+    private _nullable : boolean = false;
     private _model : Model;
 
     /**
@@ -52,12 +53,24 @@ export class Field {
         return this._defaultValue;
     }
 
+    set defaultValue(value : any) {
+        this._defaultValue = value;
+    }
+
     get nonStored() {
         return this._nonStored;
     }
 
     set nonStored(value : boolean) {
         this._nonStored = value;
+    }
+
+    get nullable() {
+        return this._nullable;
+    }
+
+    set nullable(value : boolean) {
+        this._nullable = value;
     }
 
     get model() {

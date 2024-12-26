@@ -9,7 +9,7 @@ class FieldArray extends baseArray_1.BaseArray {
         this._model = model;
     }
     push(...items) {
-        if (!this._model.isInitialized)
+        if (this._model.isInitialized)
             throw new errors_1.AlreadyInitializedModelError(this._model.modelName);
         items.forEach(item => item.setModel(this._model));
         return super.push(...items);

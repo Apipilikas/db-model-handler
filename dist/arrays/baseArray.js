@@ -41,6 +41,9 @@ class BaseArray extends Array {
         let removedItem = this.splice(index, 1)[0];
         return removedItem;
     }
+    /**
+     * Clears array from items.
+     */
     clear() {
         let length = this.length;
         for (let i = 0; i < length; i++) {

@@ -10,6 +10,12 @@ export declare class AlreadyInitializedModelError extends DBModelHandlerError {
 export declare class AlreadyInitializedSchemaError extends DBModelHandlerError {
     constructor(schemaName: string);
 }
+export declare class AlreadyOnChangeModeError extends DBModelHandlerError {
+    constructor(record: Record);
+}
+export declare class NotOnChangeModeError extends DBModelHandlerError {
+    constructor(record: Record);
+}
 export declare class NotInitializedModelError extends DBModelHandlerError {
     constructor(modelName: string);
 }
@@ -28,6 +34,9 @@ export declare class DuplicateRecordError extends DBModelHandlerError {
 export declare class ReadOnlyFieldError extends DBModelHandlerError {
     constructor(fieldName: string);
 }
+export declare class NullableFieldError extends DBModelHandlerError {
+    constructor(fieldName: string);
+}
 export declare class ValueValidationError extends DBModelHandlerError {
     constructor(value: any, validator: IDataTypeValidator);
 }
@@ -44,5 +53,8 @@ export declare class MergeModelError extends DBModelHandlerError {
 }
 export declare class ForeignFieldConstraintError extends DBModelHandlerError {
     constructor(relation: Relation, value: any);
+}
+export declare class ForeignFieldReferenceError extends DBModelHandlerError {
+    constructor(relation: Relation);
 }
 //# sourceMappingURL=errors.d.ts.map

@@ -43,6 +43,9 @@ export class BaseArray<T> extends Array<T> {
         return removedItem;
     }
 
+    /**
+     * Clears array from items.
+     */
     clear() {
         let length = this.length
         for (let i = 0; i < length; i++) {

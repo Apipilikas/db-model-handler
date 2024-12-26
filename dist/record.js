@@ -6,6 +6,8 @@ const fieldValueArray_1 = require("./arrays/fieldValueArray");
 const fieldValue_1 = require("./fieldValue");
 const errors_1 = require("./utils/errors");
 const recordUtils_1 = require("./utils/recordUtils");
+const eventArgs_1 = require("./events/eventArgs");
+const changesTracker_1 = require("./utils/changesTracker");
 class Record {
     /**
      * @constructor Record contructor
@@ -16,6 +18,7 @@ class Record {
         this._properties = new Map();
         this._model = model;
         this._fieldValues = new fieldValueArray_1.FieldValueArray();
+        this._changesTracker = new changesTracker_1.ChangesTracker(this);
     }
     get model() {
         return this._model;
@@ -168,8 +171,16 @@ class Record {
         this.updateCascadeChildRecords(fieldName, previousValue, value);
     }
     setFieldValue(fieldValue, value) {
-        fieldValue.value = value;
-        if (this._state != 4 /* RecordState.DETACHED */ && fieldValue.hasChanged() && this._state != 1 /* RecordState.ADDED */)
+        let previousValue = fieldValue.value;
+        let eventArgs = new eventArgs_1.ValueChangeEventArgs(fieldValue.field, this, previousValue, value);
+        this._model.onValueChanging(eventArgs);
+        fieldValue.value = eventArgs.proposedValue;
+        if (this._changesTracker.isOnChangeMode())
+            this._changesTracker.pushChange(fieldValue, value);
+        if (!fieldValue.hasChanged())
+            return;
+        this._model.onValueChanged(new eventArgs_1.ValueChangeEventArgs(fieldValue.field, this, previousValue, fieldValue.value));
+        if (this._state != 4 /* RecordState.DETACHED */ && this._state != 1 /* RecordState.ADDED */)
             this._state = 2 /* RecordState.MODIFIED */;
     }
     initFieldValues(startIndex = 0) {
@@ -211,12 +222,18 @@ class Record {
         switch (this._state) {
             case 0 /* RecordState.UNMODIFIED */:
             case 2 /* RecordState.MODIFIED */:
+                if (!this.shouldDeleteRecord())
+                    return;
                 this.deleteCascadeChildRecords();
                 this._state = 3 /* RecordState.DELETED */;
+                this._model.onRecordDeleted(new eventArgs_1.RecordDeletedEventArgs(this));
                 break;
             case 1 /* RecordState.ADDED */:
+                if (!this.shouldDeleteRecord())
+                    return;
                 this.deleteCascadeChildRecords();
                 this.remove();
+                this._model.onRecordDeleted(new eventArgs_1.RecordDeletedEventArgs(this));
                 break;
             case 3 /* RecordState.DELETED */:
                 throw new Error("Record is already DELETED.");
@@ -224,10 +241,21 @@ class Record {
                 throw new Error("Record is DETACHED. Cannot be deleted.");
         }
     }
+    shouldDeleteRecord() {
+        let event = new eventArgs_1.RecordDeletingEventArgs(this);
+        this._model.onRecordDeleting(event);
+        return !event.cancel;
+    }
     deleteCascadeChildRecords() {
-        for (let relation of this._model.childRelations.findCascadeDeletedOnes()) {
-            let childRecords = this.getChildRecords(relation.relationName);
-            childRecords === null || childRecords === void 0 ? void 0 : childRecords.forEach(record => record.delete());
+        for (let relation of this._model.childRelations) {
+            let childRecords = this.getChildRecordsByRelation(relation);
+            if (relation.cascadeDelete) {
+                childRecords.forEach(record => record.delete());
+            }
+            else {
+                if (childRecords.length > 0)
+                    throw new errors_1.ForeignFieldReferenceError(relation);
+            }
         }
     }
     updateCascadeChildRecords(fieldName, previousValue, proposedValue) {
@@ -288,6 +316,15 @@ class Record {
             case 4 /* RecordState.DETACHED */:
                 throw new Error("Record is DETACHED. Cannot reject changes.");
         }
+    }
+    beginChanges() {
+        this._changesTracker.beginChanges();
+    }
+    endChanges() {
+        this._changesTracker.endChanges();
+    }
+    cancelChanges() {
+        this._changesTracker.cancelChanges();
     }
     getChangesByNonStoredFields(includeNonStored) {
         let obj = {};
@@ -496,16 +533,32 @@ class Record {
      * The object should have fields that belongs to model fields.
      */
     mergeBySerialization(obj) {
-        if (_1.DataTypeValidator.DataTypeValidator.isString(obj))
-            obj = JSON.parse(obj);
-        for (let objEntry of Object.entries(obj)) {
-            this.setValue(objEntry[0], objEntry[1]);
+        try {
+            this.beginChanges();
+            if (_1.DataTypeValidator.DataTypeValidator.isString(obj))
+                obj = JSON.parse(obj);
+            for (let objEntry of Object.entries(obj)) {
+                this.setValue(objEntry[0], objEntry[1]);
+            }
+            this.endChanges();
+        }
+        catch (e) {
+            this.cancelChanges();
+            throw e;
         }
     }
     mergeChanges(record) {
-        let values = record.serializeByVersion(true);
-        let orderedValues = Record.getCorrectValuesOrderList(this._model, values);
-        this.loadData(...orderedValues);
+        try {
+            this.beginChanges();
+            let values = record.serializeByVersion(true);
+            let orderedValues = Record.getCorrectValuesOrderList(this._model, values);
+            this.loadData(...orderedValues);
+            this.endChanges();
+        }
+        catch (e) {
+            this.cancelChanges();
+            throw e;
+        }
     }
     /**
      * Only for INTERNAL use. Sets status when record is pushed to RecordArray.

@@ -12,6 +12,7 @@ export declare class Field {
     private _readOnly;
     private _nonStored;
     private _defaultValue;
+    private _nullable;
     private _model;
     /**
      * @constructor Field constructor
@@ -26,8 +27,11 @@ export declare class Field {
     get primaryKey(): boolean;
     get readOnly(): boolean;
     get defaultValue(): any;
+    set defaultValue(value: any);
     get nonStored(): boolean;
     set nonStored(value: boolean);
+    get nullable(): boolean;
+    set nullable(value: boolean);
     get model(): Model;
     /**
      * Deserializes JSON format object into Field instance.

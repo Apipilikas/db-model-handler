@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ForeignFieldConstraintError = exports.MergeModelError = exports.CastError = exports.FormatError = exports.ValueValidationError = exports.ReadOnlyFieldError = exports.DuplicateRecordError = exports.FieldNotFoundError = exports.ClosingCharNotFoundError = exports.NotInitializedSchemaError = exports.NotInitializedModelError = exports.AlreadyInitializedSchemaError = exports.AlreadyInitializedModelError = exports.DBModelHandlerError = void 0;
+exports.ForeignFieldReferenceError = exports.ForeignFieldConstraintError = exports.MergeModelError = exports.CastError = exports.FormatError = exports.ValueValidationError = exports.NullableFieldError = exports.ReadOnlyFieldError = exports.DuplicateRecordError = exports.FieldNotFoundError = exports.ClosingCharNotFoundError = exports.NotInitializedSchemaError = exports.NotInitializedModelError = exports.NotOnChangeModeError = exports.AlreadyOnChangeModeError = exports.AlreadyInitializedSchemaError = exports.AlreadyInitializedModelError = exports.DBModelHandlerError = void 0;
 class DBModelHandlerError extends Error {
     constructor(message) {
         super(message);
@@ -15,10 +15,22 @@ class AlreadyInitializedModelError extends DBModelHandlerError {
 exports.AlreadyInitializedModelError = AlreadyInitializedModelError;
 class AlreadyInitializedSchemaError extends DBModelHandlerError {
     constructor(schemaName) {
-        super(`Cannot change schema [${schemaName}] structure. Schema has already meen initialized.`);
+        super(`Cannot change schema [${schemaName}] structure. Schema has already been initialized.`);
     }
 }
 exports.AlreadyInitializedSchemaError = AlreadyInitializedSchemaError;
+class AlreadyOnChangeModeError extends DBModelHandlerError {
+    constructor(record) {
+        super(`Record with the primary key/s [${record.model.getPrimaryKeyName().toString()}] from model [${record.model.modelName}] is already on Change mode.`);
+    }
+}
+exports.AlreadyOnChangeModeError = AlreadyOnChangeModeError;
+class NotOnChangeModeError extends DBModelHandlerError {
+    constructor(record) {
+        super(`Record with the primary key/s [${record.model.getPrimaryKeyName().toString()}] from model [${record.model.modelName}] is not on Change mode. You should first invoke beginChanges function.`);
+    }
+}
+exports.NotOnChangeModeError = NotOnChangeModeError;
 class NotInitializedModelError extends DBModelHandlerError {
     constructor(modelName) {
         super(`Model [${modelName}] has not been initialized. Function initModel has to be overriden.`);
@@ -55,6 +67,12 @@ class ReadOnlyFieldError extends DBModelHandlerError {
     }
 }
 exports.ReadOnlyFieldError = ReadOnlyFieldError;
+class NullableFieldError extends DBModelHandlerError {
+    constructor(fieldName) {
+        super(`Field [${fieldName}] does not accept null values.`);
+    }
+}
+exports.NullableFieldError = NullableFieldError;
 class ValueValidationError extends DBModelHandlerError {
     constructor(value, validator) {
         super(`Value validation failed. Given value [${value}] of type [${typeof (value)}] does not agree with the field dataType [${validator.dataType}]`);
@@ -92,7 +110,13 @@ class MergeModelError extends DBModelHandlerError {
 exports.MergeModelError = MergeModelError;
 class ForeignFieldConstraintError extends DBModelHandlerError {
     constructor(relation, value) {
-        super(`Foreign field [${relation.childField.fieldName}] with value [${value}] isn't found on the parent model [${relation.parentModel.modelName}].`);
+        super(`Foreign field [${relation.childField.fieldName}] of model [${relation.childModel.modelName}] with value [${value}] isn't found on the parent model [${relation.parentModel.modelName}].`);
     }
 }
 exports.ForeignFieldConstraintError = ForeignFieldConstraintError;
+class ForeignFieldReferenceError extends DBModelHandlerError {
+    constructor(relation) {
+        super(`Record cannot be deleted as foreign field [${relation.parentField.fieldName}] of model [${relation.parentModel.modelName}] references child model [${relation.childModel.modelName}].`);
+    }
+}
+exports.ForeignFieldReferenceError = ForeignFieldReferenceError;

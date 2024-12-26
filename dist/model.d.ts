@@ -5,6 +5,7 @@ import { Field } from "./field";
 import { Record } from "./record";
 import { Schema } from "./schema";
 import { DataType } from "./utils/dataTypeValidator";
+import { IMHEvent } from "./events/events";
 export declare class Model {
     static NAME_KEY: string;
     static FIELDS_KEY: string;
@@ -18,6 +19,10 @@ export declare class Model {
     private _primaryKey;
     private _isInitialized;
     strictMode: boolean;
+    private _valueChanging;
+    private _valueChanged;
+    private _recordDeleting;
+    private _recordDeleted;
     /**
      * @constructor Model constructor
      * @param modelName The model name
@@ -30,6 +35,10 @@ export declare class Model {
     get parentRelations(): RelationModelArray;
     get childRelations(): RelationModelArray;
     get primaryKey(): Field[];
+    get valueChanging(): IMHEvent;
+    get valueChanged(): IMHEvent;
+    get recordDeleting(): IMHEvent;
+    get recordDeleted(): IMHEvent;
     /**
      * Deserializes JSON format object into Model instance.
      * @param obj The JSON format object. If the input is string then it will be JSON parsed.

@@ -9,14 +9,20 @@ const filterSelector_1 = require("./filterEvaluator/filterSelector");
 const record_1 = require("./record");
 const dataTypeValidator_1 = require("./utils/dataTypeValidator");
 const errors_1 = require("./utils/errors");
+const events_1 = require("./events/events");
 class Model {
     /**
      * @constructor Model constructor
      * @param modelName The model name
      */
     constructor(modelName) {
-        this._isInitialized = true;
+        this._isInitialized = false;
         this.strictMode = true;
+        // Events
+        this._valueChanging = new events_1.ValueChangingEvent();
+        this._valueChanged = new events_1.ValueChangedEvent();
+        this._recordDeleting = new events_1.RecordDeletingEvent();
+        this._recordDeleted = new events_1.RecordDeletedEvent();
         this._modelName = modelName;
         this._fields = new fieldArray_1.FieldArray(this);
         this._records = new recordArray_1.RecordArray(this);
@@ -24,7 +30,7 @@ class Model {
         this._childRelations = new relationArray_1.RelationModelArray(this, false);
         this.initModel();
         this.initPrimaryKey();
-        this._isInitialized = false;
+        this._isInitialized = true;
     }
     get modelName() {
         return this._modelName;
@@ -52,6 +58,19 @@ class Model {
      */
     get isInitialized() {
         return this._isInitialized;
+    }
+    // Events
+    get valueChanging() {
+        return this._valueChanging;
+    }
+    get valueChanged() {
+        return this._valueChanged;
+    }
+    get recordDeleting() {
+        return this._recordDeleting;
+    }
+    get recordDeleted() {
+        return this._recordDeleted;
     }
     /**
      * Deserializes JSON format object into Model instance.
@@ -278,6 +297,36 @@ class Model {
      */
     setSchema(schema) {
         this._schema = schema;
+    }
+    /**
+     *
+     * @internal
+     */
+    onValueChanging(arg) {
+        this._valueChanging.raiseEvent(this, arg);
+    }
+    /**
+     *
+     * @internal
+     */
+    onValueChanged(arg) {
+        this._valueChanged.raiseEvent(this, arg);
+    }
+    /**
+     *
+     * @param arg
+     * @internal
+     */
+    onRecordDeleting(arg) {
+        this._recordDeleting.raiseEvent(this, arg);
+    }
+    /**
+     *
+     * @param arg
+     * @internal
+     */
+    onRecordDeleted(arg) {
+        this._recordDeleted.raiseEvent(this, arg);
     }
     containsFieldValue(fieldName, value) {
         for (let record of this._records) {

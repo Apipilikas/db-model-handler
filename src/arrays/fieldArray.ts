@@ -12,7 +12,7 @@ export class FieldArray extends BaseArray<Field> {
     }
 
     push(...items: Field[]): number {
-        if (!this._model.isInitialized) throw new AlreadyInitializedModelError(this._model.modelName);
+        if (this._model.isInitialized) throw new AlreadyInitializedModelError(this._model.modelName);
 
         items.forEach(item => item.setModel(this._model));
         return super.push(...items);

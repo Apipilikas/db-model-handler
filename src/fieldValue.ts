@@ -1,6 +1,6 @@
 import { Field } from "./field"
 import { DataTypeValidator, IDataTypeValidator } from "./utils/dataTypeValidator"
-import { ForeignFieldConstraintError, ReadOnlyFieldError, ValueValidationError } from "./utils/errors";
+import { ForeignFieldConstraintError, NullableFieldError, ReadOnlyFieldError, ValueValidationError } from "./utils/errors";
 
 export enum FieldValueVersion {
     DEFAULT = 0,
@@ -66,6 +66,7 @@ export class FieldValue {
      * Sets value.
      */
     set value(value : any) {
+        if (!this._field.nullable && value == null) throw new NullableFieldError(this._field.fieldName);
         if (this._field.readOnly) throw new ReadOnlyFieldError(this._field.fieldName);
         if (this._field.model.strictMode && !this._dataTypeValidator.isValid(value)) throw new ValueValidationError(value, this._dataTypeValidator);
 
@@ -132,6 +133,7 @@ export class FieldValue {
     }
 
     private checkForeignKeyConstraint(value : any) {
+        if (value == null) return;
         let relation = this.field.model.parentRelations.findByChildFieldName(this.fieldName);
         if (relation == null) return;
 

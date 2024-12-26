@@ -14,6 +14,7 @@ class Field {
     constructor(fieldName, dataType, readOnly = false, primaryKey = false) {
         this._readOnly = false;
         this._nonStored = false;
+        this._nullable = false;
         this._fieldName = fieldName;
         this._dataType = dataTypeValidator_1.DataTypeValidator.getDataType(dataType);
         this._readOnly = readOnly;
@@ -35,11 +36,20 @@ class Field {
     get defaultValue() {
         return this._defaultValue;
     }
+    set defaultValue(value) {
+        this._defaultValue = value;
+    }
     get nonStored() {
         return this._nonStored;
     }
     set nonStored(value) {
         this._nonStored = value;
+    }
+    get nullable() {
+        return this._nullable;
+    }
+    set nullable(value) {
+        this._nullable = value;
     }
     get model() {
         return this._model;

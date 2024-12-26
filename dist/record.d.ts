@@ -23,6 +23,7 @@ export declare class Record {
     private _fieldValues;
     private _properties;
     private _origin;
+    private _changesTracker;
     /**
      * @constructor Record contructor
      * @param model The model
@@ -107,6 +108,7 @@ export declare class Record {
      * @throws Error in DELETED and DETACHED state
      */
     delete(): void;
+    private shouldDeleteRecord;
     private deleteCascadeChildRecords;
     private updateCascadeChildRecords;
     private remove;
@@ -123,6 +125,9 @@ export declare class Record {
      * Rolls back all changes.
      */
     rejectChanges(): void;
+    beginChanges(): void;
+    endChanges(): void;
+    cancelChanges(): void;
     private getChangesByNonStoredFields;
     /**
      * Gets all changes into JSON format.

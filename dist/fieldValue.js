@@ -56,6 +56,8 @@ class FieldValue {
      * Sets value.
      */
     set value(value) {
+        if (!this._field.nullable && value == null)
+            throw new errors_1.NullableFieldError(this._field.fieldName);
         if (this._field.readOnly)
             throw new errors_1.ReadOnlyFieldError(this._field.fieldName);
         if (this._field.model.strictMode && !this._dataTypeValidator.isValid(value))
@@ -115,6 +117,8 @@ class FieldValue {
         }
     }
     checkForeignKeyConstraint(value) {
+        if (value == null)
+            return;
         let relation = this.field.model.parentRelations.findByChildFieldName(this.fieldName);
         if (relation == null)
             return;

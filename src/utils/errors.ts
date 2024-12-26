@@ -10,25 +10,37 @@ export class DBModelHandlerError extends Error {
 
 export class AlreadyInitializedModelError extends DBModelHandlerError {
     constructor(modelName : string) {
-        super(`Cannot change model [${modelName}] structure. Model has already been initialized.`)
+        super(`Cannot change model [${modelName}] structure. Model has already been initialized.`);
     }
 }
 
 export class AlreadyInitializedSchemaError extends DBModelHandlerError {
     constructor(schemaName : string) {
-        super(`Cannot change schema [${schemaName}] structure. Schema has already meen initialized.`)
+        super(`Cannot change schema [${schemaName}] structure. Schema has already been initialized.`);
+    }
+}
+
+export class AlreadyOnChangeModeError extends DBModelHandlerError {
+    constructor(record : Record) {
+        super(`Record with the primary key/s [${record.model.getPrimaryKeyName().toString()}] from model [${record.model.modelName}] is already on Change mode.`);
+    }
+}
+
+export class NotOnChangeModeError extends DBModelHandlerError {
+    constructor(record : Record) {
+        super(`Record with the primary key/s [${record.model.getPrimaryKeyName().toString()}] from model [${record.model.modelName}] is not on Change mode. You should first invoke beginChanges function.`);
     }
 }
 
 export class NotInitializedModelError extends DBModelHandlerError {
     constructor(modelName : string) {
-        super(`Model [${modelName}] has not been initialized. Function initModel has to be overriden.`)
+        super(`Model [${modelName}] has not been initialized. Function initModel has to be overriden.`);
     }
 }
 
 export class NotInitializedSchemaError extends DBModelHandlerError {
     constructor(schemaName: string) {
-        super(`Schema [${schemaName}] has not been initialized. Function initSchema has to be overriden.`)
+        super(`Schema [${schemaName}] has not been initialized. Function initSchema has to be overriden.`);
     }
 }
 
@@ -52,19 +64,25 @@ export class DuplicateRecordError extends DBModelHandlerError {
 
 export class ReadOnlyFieldError extends DBModelHandlerError {
     constructor(fieldName : string) {
-        super(`Field [${fieldName}] is readOnly. Changing values is not permitted.`)
+        super(`Field [${fieldName}] is readOnly. Changing values is not permitted.`);
+    }
+}
+
+export class NullableFieldError extends DBModelHandlerError {
+    constructor(fieldName : string) {
+        super(`Field [${fieldName}] does not accept null values.`);
     }
 }
 
 export class ValueValidationError extends DBModelHandlerError {
     constructor(value : any, validator : IDataTypeValidator) {
-        super(`Value validation failed. Given value [${value}] of type [${typeof(value)}] does not agree with the field dataType [${validator.dataType}]`)
+        super(`Value validation failed. Given value [${value}] of type [${typeof(value)}] does not agree with the field dataType [${validator.dataType}]`);
     }
 }
 
 export class FormatError extends DBModelHandlerError {
     constructor(propertyName : string) {
-        super(`Input does not have the expected format. Property [${propertyName}] not found.`)
+        super(`Input does not have the expected format. Property [${propertyName}] not found.`);
     }
 
     static getValueOrThrow<T>(obj : any, key : string) {
@@ -96,6 +114,12 @@ export class MergeModelError extends DBModelHandlerError {
 
 export class ForeignFieldConstraintError extends DBModelHandlerError {
     constructor(relation : Relation, value : any) {
-        super(`Foreign field [${relation.childField.fieldName}] with value [${value}] isn't found on the parent model [${relation.parentModel.modelName}].`)
+        super(`Foreign field [${relation.childField.fieldName}] of model [${relation.childModel.modelName}] with value [${value}] isn't found on the parent model [${relation.parentModel.modelName}].`);
+    }
+}
+
+export class ForeignFieldReferenceError extends DBModelHandlerError {
+    constructor(relation : Relation) {
+        super(`Record cannot be deleted as foreign field [${relation.parentField.fieldName}] of model [${relation.parentModel.modelName}] references child model [${relation.childModel.modelName}].`);
     }
 }
