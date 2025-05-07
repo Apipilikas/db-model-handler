@@ -120,7 +120,7 @@ class Record {
         return record;
     }
     /**
-     * Gets values list in correct order based on fields.
+     * Gets values list in correct order based on model fields.
      * @param model The model
      * @param obj The JSON format object. If the input is string then it will be JSON parsed.
      * The object should have fields that belongs to model fields.
