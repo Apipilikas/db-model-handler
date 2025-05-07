@@ -7,7 +7,6 @@ export declare enum FieldValueVersion {
 export declare class FieldValue {
     private _field;
     private _dataTypeValidator;
-    private _defaultValue;
     private _originalValue;
     private _currentValue;
     /**
@@ -68,6 +67,7 @@ export declare class FieldValue {
      * Rejects change and rollback current value to the original one.
      */
     rejectChange(): void;
+    private parseValue;
     private checkForeignKeyConstraint;
 }
 //# sourceMappingURL=fieldValue.d.ts.map

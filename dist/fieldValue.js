@@ -18,8 +18,7 @@ class FieldValue {
     constructor(field, value) {
         this._field = field;
         this._dataTypeValidator = dataTypeValidator_1.DataTypeValidator.resolve(field.dataType);
-        this._defaultValue = this._field.defaultValue;
-        this._originalValue = this._dataTypeValidator.parseValue(value);
+        this._originalValue = this.parseValue(value);
         this._currentValue = this._originalValue;
     }
     /**
@@ -41,7 +40,7 @@ class FieldValue {
      */
     getValue(version) {
         switch (version) {
-            case FieldValueVersion.DEFAULT: return this._defaultValue;
+            case FieldValueVersion.DEFAULT: return this._field.defaultValue;
             case FieldValueVersion.ORIGINAL: return this._originalValue;
             case FieldValueVersion.CURRENT: return this._currentValue;
         }
@@ -62,7 +61,7 @@ class FieldValue {
             throw new errors_1.ReadOnlyFieldError(this._field.fieldName);
         if (this._field.model.strictMode && !this._dataTypeValidator.isValid(value))
             throw new errors_1.ValueValidationError(value, this._dataTypeValidator);
-        let parsedValue = this._dataTypeValidator.parseValue(value);
+        let parsedValue = this.parseValue(value);
         this.checkForeignKeyConstraint(parsedValue);
         this._currentValue = parsedValue;
     }
@@ -115,6 +114,11 @@ class FieldValue {
         if (this.hasChanged()) {
             this._currentValue = this._originalValue;
         }
+    }
+    parseValue(value) {
+        if (this._field.nullable && value == null)
+            return value;
+        return this._dataTypeValidator.parseValue(value);
     }
     checkForeignKeyConstraint(value) {
         if (value == null)
