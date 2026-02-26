@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "typescript": "tsc",
-    "test": "jest --watch"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
